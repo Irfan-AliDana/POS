@@ -7,6 +7,7 @@ import tokens from "./tokens/tokens.json";
 import { getServerSession } from "next-auth";
 import { authOptions } from "./api/auth/[...nextauth]/options";
 import { NextAuthProvider } from "@/providers/NextAuthProvider";
+import LayoutProvider from "@/providers/LayoutProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,7 +32,7 @@ export default async function RootLayout({
                 >
                     <AntdRegistry>
                         <NextAuthProvider session={session}>
-                            {children}
+                            <LayoutProvider>{children}</LayoutProvider>
                         </NextAuthProvider>
                     </AntdRegistry>
                 </ConfigProvider>

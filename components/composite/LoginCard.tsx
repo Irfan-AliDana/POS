@@ -1,6 +1,5 @@
 "use client";
 
-import AuthContainer from "@/containers/auth/AuthContainer";
 import ButtonMod from "../base/Button";
 import CardMod from "../base/Card";
 import { Space } from "antd";
@@ -12,8 +11,11 @@ const useStyles = createStyles({
     `,
 });
 
-export default function LoginCard() {
-    const { handleLogin } = AuthContainer();
+type LoginCardProps = {
+    handleLogin: () => void;
+};
+
+export default function LoginCard({ handleLogin }: LoginCardProps) {
     const { styles } = useStyles();
 
     return (

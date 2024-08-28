@@ -1,11 +1,8 @@
 import { Layout, Menu, MenuProps } from "antd";
 import Link from "next/link";
 import { createStyles } from "antd-style";
-import AuthContainer from "@/containers/auth/AuthContainer";
 
 type MenuItem = Required<MenuProps>["items"][number];
-
-const { handleLogout } = AuthContainer();
 
 const items: MenuItem[] = [
     {
@@ -13,14 +10,15 @@ const items: MenuItem[] = [
         key: "login",
     },
     {
-        label: <span onClick={handleLogout}>Signout</span>,
-        key: "logout",
+        label: <Link href="/">Home</Link>,
+        key: "home",
     },
 ];
 
 const useStyles = createStyles(({ token, css }) => ({
     layout: css`
         height: 100vh;
+        overflow: auto;
     `,
     header: css`
         display: flex;
@@ -33,25 +31,16 @@ const useStyles = createStyles(({ token, css }) => ({
     menu: css`
         width: fit-content;
     `,
-    content: css`
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    `,
 }));
 
-export default function AuthLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { styles } = useStyles();
     const { Header, Content } = Layout;
 
     return (
         <Layout className={styles.layout}>
             <Header className={styles.header}>
-                <h2 className={styles.logo}>My Logo</h2>
+                <h2 className={styles.logo}>POS</h2>
                 <Menu
                     theme="dark"
                     mode="horizontal"
@@ -59,7 +48,7 @@ export default function AuthLayout({
                     className={styles.menu}
                 />
             </Header>
-            <Content className={styles.content}>{children}</Content>
+            <Content>{children}</Content>
         </Layout>
     );
 }

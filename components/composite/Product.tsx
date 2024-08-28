@@ -4,6 +4,7 @@ import { Flex } from "antd";
 import Image from "next/image";
 import { createStyles } from "antd-style";
 import ButtonMod from "../base/Button";
+import { ItemType } from "@/containers/product/ProductListContainer";
 
 const useStyles = createStyles(({ token, css }) => ({
     img: css`
@@ -21,18 +22,17 @@ const useStyles = createStyles(({ token, css }) => ({
     price: css`
         font-weight: bold;
     `,
+    quantity: css`
+        margin: 0px ${token.margin}px;
+    `,
 }));
 
-interface ProductProps {
-    item: {
-        name: string;
-        price: string;
-        addedToCart?: boolean;
-    };
+type ProductProps = {
+    item: ItemType;
     handleAddToCart: (productId: string) => void;
     handleRemoveFromCart: (productId: string) => void;
-    cart: Object;
-}
+    cart: { [key: string]: string };
+};
 
 export default function Product({
     item,
@@ -47,10 +47,11 @@ export default function Product({
             <div>
                 <Image
                     alt="cloth"
-                    src="/jeans.jpg"
+                    src={item.imageUrl}
                     width={250}
                     height={300}
                     className={styles.img}
+                    loading="eager"
                 />
             </div>
             <Flex justify="space-between">
@@ -58,22 +59,20 @@ export default function Product({
                 <p className={styles.price}>{item.price}$</p>
             </Flex>
             <div style={{ marginLeft: "auto" }}>
-                {cart[item.name] ? (
+                {cart[item.id] ? (
                     <div>
                         <ButtonMod
-                            onClick={() => handleRemoveFromCart(item.name)}
+                            onClick={() => handleRemoveFromCart(item.id)}
                         >
                             -
                         </ButtonMod>
-                        <span style={{ margin: "0 10px" }}>
-                            {cart[item.name]}
-                        </span>
-                        <ButtonMod onClick={() => handleAddToCart(item.name)}>
+                        <span className={styles.quantity}>{cart[item.id]}</span>
+                        <ButtonMod onClick={() => handleAddToCart(item.id)}>
                             +
                         </ButtonMod>
                     </div>
                 ) : (
-                    <ButtonMod onClick={() => handleAddToCart(item.name)}>
+                    <ButtonMod onClick={() => handleAddToCart(item.id)}>
                         Add To Cart
                     </ButtonMod>
                 )}

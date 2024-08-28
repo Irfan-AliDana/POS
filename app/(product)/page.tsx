@@ -1,6 +1,5 @@
-import Product from "@/components/composite/Product";
-import ProductList from "@/components/layouts/ProductList";
+import ProductListContainer from "@/containers/product/ProductListContainer";
 
 export default function ProductPage() {
-    return <ProductList />;
+    return <ProductListContainer />;
 }
