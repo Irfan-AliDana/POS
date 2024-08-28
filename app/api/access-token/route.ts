@@ -6,12 +6,12 @@ export async function GET(req: NextRequest) {
     const code = searchParams.get("code");
     const state = searchParams.get("state");
 
-    if (state != "82201dd8d83d23cc8a48caf52b") {
-        return NextResponse.json(
-            { error: "Invalid CSRF token" },
-            { status: 400 }
-        );
-    }
+    // if (state != "82201dd8d83d23cc8a48caf52b") {
+    //     return NextResponse.json(
+    //         { error: "Invalid CSRF token" },
+    //         { status: 400 }
+    //     );
+    // }
 
     try {
         const responseData = await fetch(
