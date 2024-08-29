@@ -1,14 +1,14 @@
 "use client";
 
-import { ItemType } from "@/containers/product/ProductListContainer";
+import { Cart, Item } from "@/containers/product/ProductListContainer";
 import Product from "../composite/Product";
 import { Flex } from "antd";
 
 type ProductProps = {
-    data: ItemType[];
+    data: Item[];
     handleAddToCart: (productId: string) => void;
     handleRemoveFromCart: (productId: string) => void;
-    cart: { [key: string]: string };
+    cart: Cart;
 };
 
 export default function ProductList({

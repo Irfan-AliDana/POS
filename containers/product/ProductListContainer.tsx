@@ -3,7 +3,7 @@
 import ProductList from "@/components/layouts/ProductList";
 import { useEffect, useState } from "react";
 
-export type ItemType = {
+export type Item = {
     id: string;
     name: string;
     price: number;
@@ -11,9 +11,13 @@ export type ItemType = {
     imageUrl: string;
 };
 
+export type Cart = {
+    [key: string]: number;
+};
+
 export default function ProductListContainer() {
-    const [data, setData] = useState<ItemType[]>([]);
-    const [cart, setCart] = useState({});
+    const [data, setData] = useState<Item[]>([]);
+    const [cart, setCart] = useState<Cart>({});
 
     const handleAddToCart = (productId: string) => {
         setCart((prevCart) => ({
@@ -45,7 +49,7 @@ export default function ProductListContainer() {
 
             const { itemsData } = await res.json();
 
-            let updatedItem: ItemType[] = itemsData.objects
+            let updatedItem: Item[] = itemsData.objects
                 .filter((item: any) => item.type === "ITEM")
                 .map((item: any) => {
                     return {
@@ -59,7 +63,7 @@ export default function ProductListContainer() {
                 });
 
             const imagesIds = updatedItem
-                .map((item: ItemType) => item.imageId)
+                .map((item: Item) => item.imageId)
                 .filter((imageId) => imageId !== undefined);
 
             const itemRes = await fetch("/api/list-categories", {

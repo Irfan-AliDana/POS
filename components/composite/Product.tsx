@@ -4,7 +4,7 @@ import { Flex } from "antd";
 import Image from "next/image";
 import { createStyles } from "antd-style";
 import ButtonMod from "../base/Button";
-import { ItemType } from "@/containers/product/ProductListContainer";
+import { Cart, Item } from "@/containers/product/ProductListContainer";
 
 const useStyles = createStyles(({ token, css }) => ({
     img: css`
@@ -28,10 +28,10 @@ const useStyles = createStyles(({ token, css }) => ({
 }));
 
 type ProductProps = {
-    item: ItemType;
+    item: Item;
     handleAddToCart: (productId: string) => void;
     handleRemoveFromCart: (productId: string) => void;
-    cart: { [key: string]: string };
+    cart: Cart;
 };
 
 export default function Product({
