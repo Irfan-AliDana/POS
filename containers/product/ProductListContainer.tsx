@@ -1,14 +1,33 @@
 "use client";
 
 import ProductList from "@/components/layouts/ProductList";
+import { BASE_URL_API } from "@/utils/constants";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useInView } from "react-intersection-observer";
 
-export type Item = {
-    id: string;
+type Variation = {
+    variationId: string;
+    variant: string;
+    price: Price;
+};
+
+type Price = {
+    amount: number;
+    currency: string;
+};
+
+type Item = {
+    catalogObjectId: string;
     name: string;
-    price: number;
-    imageId: string;
+    variations: Variation[];
     imageUrl: string;
+    incrementable: boolean;
+};
+
+export type Items = {
+    cursor?: string;
+    items: Item[];
 };
 
 export type Cart = {
@@ -16,8 +35,72 @@ export type Cart = {
 };
 
 export default function ProductListContainer() {
-    const [data, setData] = useState<Item[]>([]);
     const [cart, setCart] = useState<Cart>({});
+    const [searchQuery, setSearchQuery] = useState("");
+    const [category, setCategory] = useState("");
+    const [categories, setCategories] = useState([]);
+
+    const { ref, inView } = useInView();
+
+    const {
+        data: productCat,
+        error: productCatError,
+        isLoading: productCatLoading,
+    } = useQuery({
+        queryKey: ["categories"],
+        queryFn: () =>
+            fetch(`${BASE_URL_API}/api/list-categories`, {
+                headers: {
+                    Authorization:
+                        "eyJhbGciOiJIUzI1NiJ9.TUxEODI1MjNWV0ZGUw.NvAa40shtB2LjY736chOJU6J9tm5JRyDd_XQHu8lxMY",
+                },
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    const transformedData = data.result.map(
+                        (cat: { id: string; name: string }) => ({
+                            label: cat.name,
+                            value: cat.id,
+                        })
+                    );
+                    setCategories(transformedData);
+
+                    return data.result;
+                }),
+    });
+
+    const {
+        data: searchedProductData,
+        error: searchError,
+        status,
+        fetchNextPage,
+        isFetchingNextPage,
+        hasNextPage,
+        isLoading,
+    } = useInfiniteQuery({
+        queryKey: ["infiniteProducts", searchQuery, category],
+        queryFn: ({ pageParam }: { pageParam: string }) =>
+            fetch(
+                `${BASE_URL_API}/api/search-catalog-items?categoryId=${category}&textFilter=${searchQuery}&cursor=${pageParam}`,
+                {
+                    headers: {
+                        Authorization:
+                            "eyJhbGciOiJIUzI1NiJ9.TUxEODI1MjNWV0ZGUw.NvAa40shtB2LjY736chOJU6J9tm5JRyDd_XQHu8lxMY",
+                    },
+                }
+            )
+                .then((res) => res.json())
+                .then((data) => {
+                    return data.result;
+                }),
+        initialPageParam: "",
+        getNextPageParam: (lastPage) => {
+            if (lastPage?.cursor !== "") {
+                return lastPage.cursor;
+            }
+            return undefined;
+        },
+    });
 
     const handleAddToCart = (productId: string) => {
         setCart((prevCart) => ({
@@ -39,69 +122,44 @@ export default function ProductListContainer() {
         });
     };
 
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const handleDropdown = (value: string) => {
+        setCategory(value);
+    };
+
     useEffect(() => {
-        const fetchItems = async () => {
-            const res = await fetch("/api/list-categories");
+        if (inView) {
+            fetchNextPage();
+        }
+    }, [fetchNextPage, inView]);
 
-            if (!res.ok) {
-                throw new Error("Something went wrong!");
-            }
-
-            const { itemsData } = await res.json();
-
-            let updatedItem: Item[] = itemsData.objects
-                .filter((item: any) => item.type === "ITEM")
-                .map((item: any) => {
-                    return {
-                        id: item.id,
-                        name: item.item_data.name,
-                        price:
-                            item.item_data.variations[0].item_variation_data
-                                .price_money.amount / 100,
-                        imageId: item.item_data?.image_ids?.[0],
-                    };
-                });
-
-            const imagesIds = updatedItem
-                .map((item: Item) => item.imageId)
-                .filter((imageId) => imageId !== undefined);
-
-            const itemRes = await fetch("/api/list-categories", {
-                method: "POST",
-                body: JSON.stringify({
-                    image_ids: imagesIds,
-                }),
-            });
-
-            if (!itemRes.ok) {
-                throw new Error("Something went wrong");
-            }
-
-            const { itemsImagesData } = await itemRes.json();
-
-            updatedItem = updatedItem.map((item) => {
-                const image = itemsImagesData.objects.find(
-                    (img: any) => img.id === item.imageId
-                );
-
-                return {
-                    ...item,
-                    imageUrl: image?.image_data.url,
-                };
-            });
-
-            setData(updatedItem);
-        };
-
-        fetchItems();
-    }, []);
+    if (productCatError || searchError) {
+        throw new Error(productCatError?.message);
+    }
 
     return (
-        <ProductList
-            data={data}
-            cart={cart}
-            handleAddToCart={handleAddToCart}
-            handleRemoveFromCart={handleRemoveFromCart}
-        />
+        <div
+            style={{
+                border: "1px solid red",
+                height: "350px",
+                overflowY: "auto",
+            }}
+        >
+            <ProductList
+                data={searchedProductData}
+                cart={cart}
+                handleAddToCart={handleAddToCart}
+                handleRemoveFromCart={handleRemoveFromCart}
+                value={searchQuery}
+                handleSearch={handleSearch}
+                loading={isLoading}
+                options={categories}
+                handleDropdown={handleDropdown}
+            />
+            <div ref={ref}>{isFetchingNextPage && "Loading Data..."}</div>
+        </div>
     );
 }

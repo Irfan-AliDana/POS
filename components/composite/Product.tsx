@@ -47,7 +47,7 @@ export default function Product({
             <div>
                 <Image
                     alt="cloth"
-                    src={item.imageUrl}
+                    src="/jeans.jpg"
                     width={250}
                     height={300}
                     className={styles.img}
@@ -59,20 +59,30 @@ export default function Product({
                 <p className={styles.price}>{item.price}$</p>
             </Flex>
             <div style={{ marginLeft: "auto" }}>
-                {cart[item.id] ? (
+                {cart[item.catalogObjectId] ? (
                     <div>
                         <ButtonMod
-                            onClick={() => handleRemoveFromCart(item.id)}
+                            onClick={() =>
+                                handleRemoveFromCart(item.catalogObjectId)
+                            }
                         >
                             -
                         </ButtonMod>
-                        <span className={styles.quantity}>{cart[item.id]}</span>
-                        <ButtonMod onClick={() => handleAddToCart(item.id)}>
+                        <span className={styles.quantity}>
+                            {cart[item.catalogObjectId]}
+                        </span>
+                        <ButtonMod
+                            onClick={() =>
+                                handleAddToCart(item.catalogObjectId)
+                            }
+                        >
                             +
                         </ButtonMod>
                     </div>
                 ) : (
-                    <ButtonMod onClick={() => handleAddToCart(item.id)}>
+                    <ButtonMod
+                        onClick={() => handleAddToCart(item.catalogObjectId)}
+                    >
                         Add To Cart
                     </ButtonMod>
                 )}

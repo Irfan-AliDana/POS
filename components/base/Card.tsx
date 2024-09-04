@@ -9,7 +9,7 @@ const useStyles = createStyles(({ token, css }) => ({
 
 const { Meta } = Card;
 
-interface CardModProps {
+type CardModProps = {
     title?: string;
     cover?: React.ReactNode;
     border?: boolean;
@@ -21,7 +21,7 @@ interface CardModProps {
     metaAvatar?: React.ReactNode;
     metaTitle?: string;
     metaDescription?: React.ReactNode;
-}
+};
 
 export default function CardMod({
     title,

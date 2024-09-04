@@ -8,13 +8,13 @@ const useStyles = createStyles(({ token, css }) => ({
     `,
 }));
 
-interface ButtonModProps {
+type ButtonModProps = {
     type?: "default" | "link" | "text" | "primary" | "dashed";
     htmlType?: "button" | "submit" | "reset";
     disabled?: boolean;
     onClick?: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
     children: React.ReactNode;
-}
+};
 
 export default function ButtonMod({
     type = "default",
