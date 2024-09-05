@@ -4,6 +4,10 @@ import { createStyles } from "antd-style";
 const useStyles = createStyles(({ token, css }) => ({
     input: css`
         width: 15%;
+
+        @media only screen and (max-width: 576px) {
+            width: 50%;
+        }
     `,
 }));
 

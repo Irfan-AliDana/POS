@@ -1,8 +1,10 @@
 "use client";
 
+import Spinner from "@/components/base/Spinner";
 import ProductList from "@/components/layouts/ProductList";
 import { BASE_URL_API } from "@/utils/constants";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Flex } from "antd";
 import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
 
@@ -17,7 +19,7 @@ type Price = {
     currency: string;
 };
 
-type Item = {
+export type Item = {
     catalogObjectId: string;
     name: string;
     variations: Variation[];
@@ -32,6 +34,10 @@ export type Items = {
 
 export type Cart = {
     [key: string]: number;
+};
+
+export type Data = {
+    pages: Items[];
 };
 
 export default function ProductListContainer() {
@@ -127,7 +133,7 @@ export default function ProductListContainer() {
     };
 
     const handleDropdown = (value: string) => {
-        setCategory(value);
+        setCategory(value || "");
     };
 
     useEffect(() => {
@@ -141,13 +147,7 @@ export default function ProductListContainer() {
     }
 
     return (
-        <div
-            style={{
-                border: "1px solid red",
-                height: "350px",
-                overflowY: "auto",
-            }}
-        >
+        <div>
             <ProductList
                 data={searchedProductData}
                 cart={cart}
@@ -159,7 +159,13 @@ export default function ProductListContainer() {
                 options={categories}
                 handleDropdown={handleDropdown}
             />
-            <div ref={ref}>{isFetchingNextPage && "Loading Data..."}</div>
+            <div ref={ref} style={{ padding: "10px 0" }}>
+                {isFetchingNextPage && (
+                    <Flex justify="center">
+                        <Spinner size={30} />
+                    </Flex>
+                )}
+            </div>
         </div>
     );
 }

@@ -11,6 +11,10 @@ export type SearchModeProps = {
 const useStyles = createStyles(({ token, css }) => ({
     select: css`
         width: 15%;
+
+        @media only screen and (max-width: 576px) {
+            width: 50%;
+        }
     `,
 }));
 
@@ -30,6 +34,7 @@ export default function SelectMod({
             optionFilterProp="label"
             options={options}
             className={styles.select}
+            allowClear
         />
     );
 }

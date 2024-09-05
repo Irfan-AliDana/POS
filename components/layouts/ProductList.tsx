@@ -1,10 +1,11 @@
 "use client";
 
-import { Cart, Items } from "@/containers/product/ProductListContainer";
+import { Cart, Data } from "@/containers/product/ProductListContainer";
 import Product from "../composite/Product";
 import { Flex } from "antd";
 import SearchBar, { SearchBarProps } from "../composite/SearchBar";
 import { createStyles } from "antd-style";
+import Spinner from "../base/Spinner";
 
 const useStyles = createStyles(({ token, css }) => ({
     container: css`
@@ -13,7 +14,7 @@ const useStyles = createStyles(({ token, css }) => ({
 }));
 
 type ProductProps = SearchBarProps & {
-    data: Items;
+    data: Data | undefined;
     handleAddToCart: (productId: string) => void;
     handleRemoveFromCart: (productId: string) => void;
     cart: Cart;
@@ -43,21 +44,30 @@ export default function ProductList({
             />
 
             {loading ? (
-                <div>Loading</div>
+                <Flex
+                    justify="center"
+                    align="center"
+                    style={{ height: "100vh" }}
+                >
+                    <Spinner />
+                </Flex>
             ) : (
                 <div>
-                    {data.pages.map((page, index) => (
-                        <Flex wrap key={index}>
-                            {page.items.map((item) => (
-                                <Product
-                                    item={item}
-                                    handleAddToCart={handleAddToCart}
-                                    handleRemoveFromCart={handleRemoveFromCart}
-                                    cart={cart}
-                                />
-                            ))}
-                        </Flex>
-                    ))}
+                    {data &&
+                        data.pages.map((page, index) => (
+                            <Flex justify="center" wrap key={index}>
+                                {page.items.map((item) => (
+                                    <Product
+                                        item={item}
+                                        handleAddToCart={handleAddToCart}
+                                        handleRemoveFromCart={
+                                            handleRemoveFromCart
+                                        }
+                                        cart={cart}
+                                    />
+                                ))}
+                            </Flex>
+                        ))}
                 </div>
             )}
         </Flex>
