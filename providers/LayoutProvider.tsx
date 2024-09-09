@@ -1,11 +1,11 @@
 "use client";
 
-import AppLayout from "@/components/layouts/AppLayout";
+import LayoutContainer from "@/containers/layout/LayoutContainer";
 
 export default function LayoutProvider({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    return <AppLayout>{children}</AppLayout>;
+    return <LayoutContainer>{children}</LayoutContainer>;
 }

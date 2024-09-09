@@ -3,6 +3,7 @@
 import Spinner from "@/components/base/Spinner";
 import ProductList from "@/components/layouts/ProductList";
 import { BASE_URL_API } from "@/utils/constants";
+import { useCartStore } from "@/zustand/store/cart-store";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Flex } from "antd";
 import { useEffect, useState } from "react";
@@ -41,7 +42,10 @@ export type Data = {
 };
 
 export default function ProductListContainer() {
-    const [cart, setCart] = useState<Cart>({});
+    // const [cart, setCart] = useState<Cart>({});
+    const cart = useCartStore((state) => state.cart);
+    const handleAddToCart = useCartStore((state) => state.addToCart);
+    const handleRemoveFromCart = useCartStore((state) => state.removeFromCart);
     const [searchQuery, setSearchQuery] = useState("");
     const [category, setCategory] = useState("");
     const [categories, setCategories] = useState([]);
@@ -108,25 +112,25 @@ export default function ProductListContainer() {
         },
     });
 
-    const handleAddToCart = (productId: string) => {
-        setCart((prevCart) => ({
-            ...prevCart,
-            [productId]: (prevCart[productId] || 0) + 1,
-        }));
-    };
+    // const handleAddToCart = (productId: string) => {
+    //     setCart((prevCart) => ({
+    //         ...prevCart,
+    //         [productId]: (prevCart[productId] || 0) + 1,
+    //     }));
+    // };
 
-    const handleRemoveFromCart = (productId: string) => {
-        setCart((prevCart) => {
-            const updatedCart = { ...prevCart };
-            if (updatedCart[productId] > 1) {
-                updatedCart[productId] -= 1;
-                return updatedCart;
-            } else {
-                delete updatedCart[productId];
-            }
-            return updatedCart;
-        });
-    };
+    // const handleRemoveFromCart = (productId: string) => {
+    //     setCart((prevCart) => {
+    //         const updatedCart = { ...prevCart };
+    //         if (updatedCart[productId] > 1) {
+    //             updatedCart[productId] -= 1;
+    //             return updatedCart;
+    //         } else {
+    //             delete updatedCart[productId];
+    //         }
+    //         return updatedCart;
+    //     });
+    // };
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);

@@ -1,19 +1,6 @@
-import { Layout, Menu, MenuProps } from "antd";
-import Link from "next/link";
+import { MenuItem } from "@/containers/layout/LayoutContainer";
+import { Flex, Layout, Menu } from "antd";
 import { createStyles } from "antd-style";
-
-type MenuItem = Required<MenuProps>["items"][number];
-
-const items: MenuItem[] = [
-    {
-        label: <Link href="/login">Login</Link>,
-        key: "login",
-    },
-    {
-        label: <Link href="/">Home</Link>,
-        key: "home",
-    },
-];
 
 const useStyles = createStyles(({ token, css }) => ({
     layout: css`
@@ -29,11 +16,20 @@ const useStyles = createStyles(({ token, css }) => ({
         color: ${token.colorPrimary};
     `,
     menu: css`
-        width: fit-content;
+        width: 100%;
+        display: flex;
+        justify-content: end;
+        align-items: center;
     `,
 }));
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({
+    children,
+    items,
+}: {
+    children: React.ReactNode;
+    items: MenuItem[];
+}) {
     const { styles } = useStyles();
     const { Header, Content } = Layout;
 
