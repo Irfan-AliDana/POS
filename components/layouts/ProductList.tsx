@@ -1,6 +1,6 @@
 "use client";
 
-import { Cart, Data } from "@/containers/product/ProductListContainer";
+import { Cart, Data, Item } from "@/containers/product/ProductListContainer";
 import Product from "../composite/Product";
 import { Flex } from "antd";
 import SearchBar, { SearchBarProps } from "../composite/SearchBar";
@@ -15,7 +15,7 @@ const useStyles = createStyles(({ token, css }) => ({
 
 type ProductProps = SearchBarProps & {
     data: Data | undefined;
-    handleAddToCart: (productId: string) => void;
+    handleAddToCart: (productId: string, data: Item) => void;
     handleRemoveFromCart: (productId: string) => void;
     cart: Cart;
 };

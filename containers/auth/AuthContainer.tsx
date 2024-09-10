@@ -3,7 +3,6 @@
 import LoginCard from "@/components/composite/LoginCard";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function AuthContainer() {
     const router = useRouter();
@@ -27,7 +26,7 @@ export default function AuthContainer() {
     };
 
     if (session?.isLoggedIn) {
-        return router.push("/");
+        return router.push("/") as React.ReactNode;
     }
 
     return <LoginCard handleLogin={handleLogin} />;

@@ -29,7 +29,7 @@ const useStyles = createStyles(({ token, css }) => ({
 
 type ProductProps = {
     item: Item;
-    handleAddToCart: (productId: string) => void;
+    handleAddToCart: (productId: string, data: Item) => void;
     handleRemoveFromCart: (productId: string) => void;
     cart: Cart;
 };
@@ -74,11 +74,11 @@ export default function Product({
                             -
                         </ButtonMod>
                         <span className={styles.quantity}>
-                            {cart[item.catalogObjectId]}
+                            {cart[item.catalogObjectId]?.quantity}
                         </span>
                         <ButtonMod
                             onClick={() =>
-                                handleAddToCart(item.catalogObjectId)
+                                handleAddToCart(item.catalogObjectId, item)
                             }
                         >
                             +
@@ -86,7 +86,9 @@ export default function Product({
                     </div>
                 ) : (
                     <ButtonMod
-                        onClick={() => handleAddToCart(item.catalogObjectId)}
+                        onClick={() =>
+                            handleAddToCart(item.catalogObjectId, item)
+                        }
                     >
                         Add To Cart
                     </ButtonMod>

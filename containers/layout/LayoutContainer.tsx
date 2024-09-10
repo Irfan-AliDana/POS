@@ -28,6 +28,9 @@ const useStyles = createStyles(({ token, css }) => ({
     iconSize: css`
         font-size: 30px !important;
     `,
+    drawerCard: css`
+        padding-bottom: 10px;
+    `,
 }));
 
 export type MenuItem = Required<MenuProps>["items"][number];
@@ -63,11 +66,22 @@ export default function LayoutContainer({
 }: {
     children: React.ReactNode;
 }) {
+    const { styles } = useStyles();
+
     const [open, setOpen] = useState(false);
 
     const cart = useCartStore((state) => state.cart);
 
-    const itemsCount = Object.values(cart).reduce((prevValue, currVal) => {
+    const cartKeys = Object.keys(cart);
+
+    const totalQuantity =
+        cartKeys?.map((key) => {
+            let totalQuantity = 0;
+            totalQuantity = totalQuantity + cart[key].quantity;
+            return totalQuantity;
+        }) || 0;
+
+    const itemsCount = totalQuantity.reduce((prevValue, currVal) => {
         return prevValue + currVal;
     }, 0);
 
@@ -82,12 +96,20 @@ export default function LayoutContainer({
     return (
         <AppLayout items={getItems(itemsCount, handleShowDrawer)}>
             <Drawer
-                title={`My Cart (5)`}
+                title={`My Cart (${itemsCount})`}
                 onClose={handleCloseDrawer}
                 open={open}
                 width={500}
             >
-                {<CartDetails />}
+                {cartKeys.length > 0 ? (
+                    cartKeys.map((key) => (
+                        <div className={styles.drawerCard} key={key}>
+                            <CartDetails cart={cart[key]} />
+                        </div>
+                    ))
+                ) : (
+                    <h3>Your cart is empty!</h3>
+                )}
             </Drawer>
             {children}
         </AppLayout>

@@ -1,27 +1,32 @@
-import { Cart } from "@/containers/product/ProductListContainer";
+import { Cart, Item } from "@/containers/product/ProductListContainer";
 import { create } from "zustand";
 
 type CartStore = {
     cart: Cart;
-    addToCart: (productId: string) => void;
+    addToCart: (productId: string, data: Item) => void;
     removeFromCart: (productId: string) => void;
 };
 
 export const useCartStore = create<CartStore>((set) => ({
     cart: {},
-    addToCart: (productId) => {
-        set((state) => ({
-            cart: {
-                ...state.cart,
-                [productId]: (state.cart[productId] || 0) + 1,
-            },
-        }));
+    addToCart: (productId, data) => {
+        set((state) => {
+            return {
+                cart: {
+                    ...state.cart,
+                    [productId]: {
+                        quantity: (state.cart[productId]?.quantity || 0) + 1,
+                        data,
+                    },
+                },
+            };
+        });
     },
     removeFromCart: (productId) => {
         set((state) => {
             const updatedCart = { ...state.cart };
-            if (updatedCart[productId] > 1) {
-                updatedCart[productId] -= 1;
+            if (updatedCart[productId].quantity > 1) {
+                updatedCart[productId].quantity -= 1;
             } else {
                 delete updatedCart[productId];
             }
