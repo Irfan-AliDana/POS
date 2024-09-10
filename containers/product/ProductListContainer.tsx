@@ -54,55 +54,39 @@ export default function ProductListContainer() {
     const handleRemoveFromCart = useCartStore((state) => state.removeFromCart);
     const [searchQuery, setSearchQuery] = useState("");
     const [category, setCategory] = useState("");
-    const [categories, setCategories] = useState([]);
 
     const router = useRouter();
 
     const { ref, inView } = useInView();
 
-    const {
-        data: session,
-        isLoading: sessionIsLoading,
-        isFetched: sessionIsFetched,
-    } = useQuery({
+    const { data: session, isFetched: sessionIsFetched } = useQuery({
         queryKey: ["session"],
         queryFn: () => fetch("/api/get-session").then((res) => res.json()),
     });
 
-    const {
-        data: productCat,
-        error: productCatError,
-        isLoading: productCatLoading,
-    } = useQuery({
+    const { data: productCat, error: productCatError } = useQuery({
         queryKey: ["categories", sessionIsFetched],
         queryFn: () =>
             fetch(`${BASE_URL_API}/api/list-categories`, {
                 headers: {
                     Authorization: session?.token,
                 },
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    const transformedData = data.result.map(
-                        (cat: { id: string; name: string }) => ({
-                            label: cat.name,
-                            value: cat.id,
-                        })
-                    );
-                    setCategories(transformedData);
-
-                    return data.result;
-                }),
+            }).then((res) => res.json()),
         enabled: !!session?.token,
     });
+
+    const transformedCat = productCat?.result.map(
+        (cat: { id: string; name: string }) => ({
+            label: cat.name,
+            value: cat.id,
+        })
+    );
 
     const {
         data: searchedProductData,
         error: searchError,
-        status,
         fetchNextPage,
         isFetchingNextPage,
-        hasNextPage,
         isLoading,
     } = useInfiniteQuery({
         queryKey: ["infiniteProducts", searchQuery, category, sessionIsFetched],
@@ -148,7 +132,7 @@ export default function ProductListContainer() {
     }
 
     if (!session?.isLoggedIn) {
-        return router.push("/login");
+        return router.push("/login") as React.ReactNode;
     }
 
     return (
@@ -161,7 +145,7 @@ export default function ProductListContainer() {
                 value={searchQuery}
                 handleSearch={handleSearch}
                 loading={isLoading}
-                options={categories}
+                options={transformedCat}
                 handleDropdown={handleDropdown}
             />
             <div ref={ref} style={{ padding: "10px 0" }}>
