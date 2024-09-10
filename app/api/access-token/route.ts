@@ -1,55 +1,35 @@
 import { BASE_URL } from "@/utils/constants";
+import { SessionData, sessionOptions } from "@/utils/lib";
+import { getIronSession } from "iron-session";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
-    const state = searchParams.get("state");
-
-    // if (state != "82201dd8d83d23cc8a48caf52b") {
-    //     return NextResponse.json(
-    //         { error: "Invalid CSRF token" },
-    //         { status: 400 }
-    //     );
-    // }
 
     try {
         const responseData = await fetch(
-            "https://connect.squareup.com/oauth2/token",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    client_id: process.env.SQUARE_CLIENT_ID,
-                    client_secret: process.env.SQUARE_CLIENT_SECRET,
-                    code,
-                    grant_type: "authorization_code",
-                }),
-            }
+            `http://localhost:5000/api/access-token?code=${code}`
         );
 
         if (!responseData.ok) {
             return NextResponse.json({ error: "Token not received" });
         }
 
-        const { access_token, refresh_token, expires_at } =
-            await responseData.json();
+        const { result } = await responseData.json();
 
-        localStorage.setItem(
-            "credentails",
-            JSON.stringify({ access_token, refresh_token, expires_at })
+        const session = await getIronSession<SessionData>(
+            cookies(),
+            sessionOptions
         );
 
-        return NextResponse.json(
-            { success: "true", access_token, refresh_token, expires_at },
-            { status: 200 }
-        );
+        session.isLoggedIn = true;
+        session.token = result.token;
+        await session.save();
+
+        return NextResponse.redirect(`${BASE_URL}`);
     } catch (error) {
-        return NextResponse.json(
-            { error: "Failed to obtain access token" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error }, { status: 500 });
     }
 }
