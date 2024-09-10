@@ -6,6 +6,7 @@ import { BASE_URL_API } from "@/utils/constants";
 import { useCartStore } from "@/zustand/store/cart-store";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Flex } from "antd";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
 
@@ -50,19 +51,29 @@ export default function ProductListContainer() {
     const [category, setCategory] = useState("");
     const [categories, setCategories] = useState([]);
 
+    const router = useRouter();
+
     const { ref, inView } = useInView();
+
+    const {
+        data: session,
+        isLoading: sessionIsLoading,
+        isFetched: sessionIsFetched,
+    } = useQuery({
+        queryKey: ["session"],
+        queryFn: () => fetch("/api/get-session").then((res) => res.json()),
+    });
 
     const {
         data: productCat,
         error: productCatError,
         isLoading: productCatLoading,
     } = useQuery({
-        queryKey: ["categories"],
+        queryKey: ["categories", sessionIsFetched],
         queryFn: () =>
             fetch(`${BASE_URL_API}/api/list-categories`, {
                 headers: {
-                    Authorization:
-                        "eyJhbGciOiJIUzI1NiJ9.TUxEODI1MjNWV0ZGUw.NvAa40shtB2LjY736chOJU6J9tm5JRyDd_XQHu8lxMY",
+                    Authorization: session?.token,
                 },
             })
                 .then((res) => res.json())
@@ -77,6 +88,7 @@ export default function ProductListContainer() {
 
                     return data.result;
                 }),
+        enabled: !!session?.token,
     });
 
     const {
@@ -88,14 +100,13 @@ export default function ProductListContainer() {
         hasNextPage,
         isLoading,
     } = useInfiniteQuery({
-        queryKey: ["infiniteProducts", searchQuery, category],
+        queryKey: ["infiniteProducts", searchQuery, category, sessionIsFetched],
         queryFn: ({ pageParam }: { pageParam: string }) =>
             fetch(
                 `${BASE_URL_API}/api/search-catalog-items?categoryId=${category}&textFilter=${searchQuery}&cursor=${pageParam}`,
                 {
                     headers: {
-                        Authorization:
-                            "eyJhbGciOiJIUzI1NiJ9.TUxEODI1MjNWV0ZGUw.NvAa40shtB2LjY736chOJU6J9tm5JRyDd_XQHu8lxMY",
+                        Authorization: session?.token,
                     },
                 }
             )
@@ -110,6 +121,7 @@ export default function ProductListContainer() {
             }
             return undefined;
         },
+        enabled: !!session?.token,
     });
 
     // const handleAddToCart = (productId: string) => {
@@ -148,6 +160,10 @@ export default function ProductListContainer() {
 
     if (productCatError || searchError) {
         throw new Error(productCatError?.message);
+    }
+
+    if (!session?.isLoggedIn) {
+        return router.push("/login");
     }
 
     return (
