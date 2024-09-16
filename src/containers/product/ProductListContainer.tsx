@@ -103,8 +103,6 @@ export default function ProductListContainer() {
         enabled: !!session?.token,
     });
 
-    console.log(searchedProductData);
-
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
     };

@@ -2,6 +2,7 @@ import { CartItem } from "@/src/containers/product/ProductListContainer";
 import { Flex, Space } from "antd";
 import { createStyles } from "antd-style";
 import SelectMod from "../base/Select";
+import { DiscountAndTax } from "@/src/containers/layout/LayoutContainer";
 
 const useStyles = createStyles(({ token, css }) => ({
     container: css`
@@ -13,11 +14,12 @@ const useStyles = createStyles(({ token, css }) => ({
 
 type CartDetailsProps = {
     cart: CartItem;
-    handleDiscount: (value: string, cart: CartItem) => void;
+    handleDiscount: (value: string, cart?: CartItem) => void;
     handleTax: (value: string, productId: string) => void;
     discountOptions: { label: string; value: number }[];
     taxOptions: { label: string; value: number }[];
     finalPrice: number;
+    type: DiscountAndTax;
 };
 
 export default function CartDetails({
@@ -27,10 +29,9 @@ export default function CartDetails({
     discountOptions,
     taxOptions,
     finalPrice,
+    type,
 }: CartDetailsProps) {
     const { styles } = useStyles();
-
-    console.log(cart);
 
     return (
         <Flex
@@ -48,24 +49,26 @@ export default function CartDetails({
                     <p>Final: ${finalPrice}</p>
                 </Space>
             </Flex>
-            <Space direction="vertical">
-                <SelectMod
-                    showSearch
-                    placeholder="Select Discount"
-                    handleDropdown={(value) => {
-                        handleDiscount(`${value}`, cart);
-                    }}
-                    options={discountOptions}
-                />
-                <SelectMod
-                    showSearch
-                    placeholder="Select Tax"
-                    handleDropdown={(value) =>
-                        handleTax(`${value}`, cart.data.catalogObjectId)
-                    }
-                    options={taxOptions}
-                />
-            </Space>
+            {type === "inline" && (
+                <Space direction="vertical">
+                    <SelectMod
+                        showSearch
+                        placeholder="Select Discount"
+                        handleDropdown={(value) => {
+                            handleDiscount(`${value}`, cart);
+                        }}
+                        options={discountOptions}
+                    />
+                    <SelectMod
+                        showSearch
+                        placeholder="Select Tax"
+                        handleDropdown={(value) =>
+                            handleTax(`${value}`, cart.data.catalogObjectId)
+                        }
+                        options={taxOptions}
+                    />
+                </Space>
+            )}
         </Flex>
     );
 }

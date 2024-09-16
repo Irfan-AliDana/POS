@@ -1,6 +1,6 @@
 import AppLayout from "@/src/components/layouts/AppLayout";
 import Link from "next/link";
-import { Drawer, MenuProps, Space } from "antd";
+import { Drawer, Flex, MenuProps, Space } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import { createStyles } from "antd-style";
 import { useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import { BASE_URL_API } from "@/src/utils/constants";
 import SelectMod from "@/src/components/base/Select";
 import { useSession } from "@/src/hooks/useSession";
 import { useFetch } from "@/src/hooks/useFetch";
+import { CartItem } from "../product/ProductListContainer";
 
 const useStyles = createStyles(({ token, css }) => ({
     cartItem: css`
@@ -75,6 +76,8 @@ type DiscountDto = {
     scope: string;
 };
 
+export type DiscountAndTax = "global" | "inline";
+
 const getItems = (itemsCount: any, showDrawer: () => void) => {
     const { styles } = useStyles();
 
@@ -101,6 +104,24 @@ const getItems = (itemsCount: any, showDrawer: () => void) => {
     return item;
 };
 
+const typeOptions = [
+    {
+        label: "Global",
+        value: "global",
+    },
+    {
+        label: "Inline",
+        value: "inline",
+    },
+];
+
+const defaultOrder = {
+    locationId: "LS39Z5XR173MZ",
+    lineItems: [],
+    discounts: [],
+    taxes: [],
+};
+
 export default function LayoutContainer({
     children,
 }: {
@@ -108,15 +129,20 @@ export default function LayoutContainer({
 }) {
     const { styles } = useStyles();
 
-    const [discount, setDiscount] = useState<{ [key: string]: string }>({});
-    const [tax, setTax] = useState<{ [key: string]: number }>({});
+    const [discount, setDiscount] = useState<any>({});
+    const [tax, setTax] = useState<any>({});
     const [calculatedAmount, setCalculatedAmount] = useState<any>({});
-    const [order, setOrder] = useState<CalculateOrderRequestDto>({
-        locationId: "LS39Z5XR173MZ",
-        lineItems: [],
-        discounts: [],
-        taxes: [],
-    } as CalculateOrderRequestDto);
+    const [open, setOpen] = useState(false);
+    const [order, setOrder] = useState<CalculateOrderRequestDto>(
+        defaultOrder as CalculateOrderRequestDto
+    );
+    const [discountType, setDiscountType] = useState<DiscountAndTax>("global");
+    const [totalPrice, setTotalPrice] = useState(0);
+    const [perItemPrice, setPerItemPrice] = useState(0);
+
+    const cart = useCartStore((state) => state.cart);
+
+    const cartKeys = Object.keys(cart);
 
     const { session, sessionIsFetched } = useSession();
 
@@ -172,12 +198,6 @@ export default function LayoutContainer({
         },
     });
 
-    const [open, setOpen] = useState(false);
-
-    const cart = useCartStore((state) => state.cart);
-
-    const cartKeys = Object.keys(cart);
-
     const totalQuantity =
         cartKeys?.map((key) => {
             let totalQuantity = 0;
@@ -197,19 +217,46 @@ export default function LayoutContainer({
         setOpen(false);
     };
 
-    const handleDiscount = (discountId: string) => {
-        setOrder((prevData) => {
-            return {
-                ...prevData,
-                discounts: [
-                    {
-                        uid: discountId,
-                        catalogObjectId: discountId,
-                        scope: "ORDER",
-                    },
-                ],
-            };
-        });
+    const handleDiscount = (discountId: string, cartItem?: CartItem | any) => {
+        if (discountType === "global") {
+            setDiscount({
+                uid: discountId,
+                catalogObjectId: discountId,
+                scope: "ORDER",
+            });
+        } else {
+            setDiscount((prevData: any) => [
+                prevData,
+                // [cartItem?.data.variations[0].variationId]: {
+                //     discountUid: discountId,
+                //     uid: discountId,
+                // },
+                {
+                    catalogObjectId: discountId,
+                    uid: discountId,
+                    scope: "IN_LINE",
+                },
+            ]);
+            // const updatedOrder = {
+            //     ...order,
+            //     lineItems: order.lineItems.map((item) => {
+            //         console.log("Cart Item", cartItem);
+            //         return item.catalogObjectId ===
+            //             cartItem?.data.variations[0].variationId
+            //             ? {
+            //                   ...item,
+            //                   appliedDiscounts: [
+            //                       {
+            //                           discountUid: discountId,
+            //                           uid: discountId,
+            //                       },
+            //                   ],
+            //               }
+            //             : item;
+            //     }),
+            // };
+            // setOrder(updatedOrder);
+        }
     };
 
     const handleTax = (taxId: string) => {
@@ -227,40 +274,9 @@ export default function LayoutContainer({
         });
     };
 
-    useEffect(() => {
-        const transformedCart = Object.values(cart).map(
-            (cartItem) =>
-                ({
-                    quantity: `${cartItem.quantity}`,
-                    catalogObjectId: cartItem.data.variations[0].variationId,
-                    itemType: "ITEM",
-                } as LineItemDto)
-        );
-
-        if (transformedCart.length !== 0) {
-            setOrder((prevData) => ({
-                ...prevData,
-                lineItems: transformedCart,
-            }));
-        }
-    }, [cart]);
-
-    useEffect(() => {
-        if (
-            order.discounts.length &&
-            order?.discounts[0]?.uid !== "undefined" &&
-            order.taxes.length &&
-            order?.taxes[0]?.uid !== "undefined" &&
-            order?.lineItems.length
-        ) {
-            const transformedOrder = {
-                order: {
-                    ...order,
-                },
-            };
-            mutate(transformedOrder as any);
-        }
-    }, [order]);
+    const handleTypeChange = (value: DiscountAndTax) => {
+        setDiscountType(value);
+    };
 
     const footer = (
         <Space>
@@ -297,14 +313,97 @@ export default function LayoutContainer({
         </Space>
     );
 
+    const totalOnlyFooter = (
+        <Space>
+            <h4>Total</h4>
+            <span>
+                ${calculatedAmount?.netAmounts?.totalMoney.amount / 100 || "0"}
+            </span>
+        </Space>
+    );
+
+    const header = (
+        <Flex justify="space-between">
+            <p>{`My Cart (${itemsCount})`}</p>
+            <div style={{ width: "50%" }}>
+                <SelectMod
+                    showSearch={false}
+                    placeholder="Discount Type"
+                    handleDropdown={(value) =>
+                        handleTypeChange(value as DiscountAndTax)
+                    }
+                    options={typeOptions}
+                    defaultValue="global"
+                    allowClear={false}
+                />
+            </div>
+        </Flex>
+    );
+
+    useEffect(() => {
+        const transformedCart = Object.values(cart).map(
+            (cartItem) =>
+                ({
+                    quantity: `${cartItem.quantity}`,
+                    catalogObjectId: cartItem.data.variations[0].variationId,
+                    itemType: "ITEM",
+                } as LineItemDto)
+        );
+
+        if (transformedCart.length !== 0) {
+            setOrder((prevData) => ({
+                ...prevData,
+                lineItems: transformedCart,
+            }));
+        }
+    }, [cart]);
+
+    useEffect(() => {
+        if (
+            order.discounts.length &&
+            order?.discounts[0]?.uid !== "undefined" &&
+            // order.taxes.length &&
+            // order?.taxes[0]?.uid !== "undefined" &&
+            order?.lineItems.length
+        ) {
+            const transformedOrder = {
+                order: {
+                    ...order,
+                },
+            };
+            mutate(transformedOrder as any);
+        }
+        console.log("Order", order);
+    }, [order]);
+
+    useEffect(() => {
+        setTotalPrice(0);
+        setPerItemPrice(0);
+        setCalculatedAmount({});
+        setDiscount({});
+    }, [discountType]);
+
+    useEffect(() => {
+        if (discountType === "global") {
+            setOrder((prevData) => {
+                return {
+                    ...prevData,
+                    discounts: [discount],
+                };
+            });
+        } else {
+            console.log(discount);
+        }
+    }, [discount, tax]);
+
     return (
         <AppLayout items={getItems(itemsCount, handleShowDrawer)}>
             <Drawer
-                title={`My Cart (${itemsCount})`}
+                title={header}
                 onClose={handleCloseDrawer}
                 open={open}
                 width={500}
-                footer={footer}
+                footer={discountType === "global" ? footer : totalOnlyFooter}
             >
                 {cartKeys.length > 0 ? (
                     cartKeys.map((key) => {
@@ -317,7 +416,7 @@ export default function LayoutContainer({
                             }
                         );
 
-                        let finalPrice = 0;
+                        let finalPrice = perItemPrice;
                         if (listItem) {
                             finalPrice = listItem[0]?.totalMoney?.amount / 100;
                         }
@@ -336,6 +435,7 @@ export default function LayoutContainer({
                                             : cart[key].data.variations[0].price
                                                   .amount / 100
                                     }
+                                    type={discountType}
                                 />
                             </div>
                         );

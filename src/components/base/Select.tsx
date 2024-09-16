@@ -6,6 +6,8 @@ export type SelectModProps = {
     placeholder: string;
     handleDropdown: (value: string | number) => void;
     options: { label: string; value: string | number }[];
+    defaultValue?: string;
+    allowClear?: boolean;
 };
 
 const useStyles = createStyles(({ token, css }) => ({
@@ -23,6 +25,8 @@ export default function SelectMod({
     placeholder,
     handleDropdown,
     options,
+    defaultValue,
+    allowClear = true,
 }: SelectModProps) {
     const { styles } = useStyles();
 
@@ -34,7 +38,8 @@ export default function SelectMod({
             optionFilterProp="label"
             options={options}
             className={styles.select}
-            allowClear
+            allowClear={allowClear}
+            defaultValue={defaultValue}
         />
     );
 }
