@@ -129,8 +129,8 @@ export default function LayoutContainer({
 }) {
     const { styles } = useStyles();
 
-    const [discount, setDiscount] = useState<any>({});
-    const [tax, setTax] = useState<any>({});
+    const [discount, setDiscount] = useState<any>([]);
+    const [tax, setTax] = useState<any>([]);
     const [calculatedAmount, setCalculatedAmount] = useState<any>({});
     const [open, setOpen] = useState(false);
     const [order, setOrder] = useState<CalculateOrderRequestDto>(
@@ -217,61 +217,111 @@ export default function LayoutContainer({
         setOpen(false);
     };
 
-    const handleDiscount = (discountId: string, cartItem?: CartItem | any) => {
+    const handleDiscount = (discountId: string, cartItemId?: string) => {
         if (discountType === "global") {
-            setDiscount({
-                uid: discountId,
-                catalogObjectId: discountId,
-                scope: "ORDER",
-            });
-        } else {
-            setDiscount((prevData: any) => [
-                prevData,
-                // [cartItem?.data.variations[0].variationId]: {
-                //     discountUid: discountId,
-                //     uid: discountId,
-                // },
+            setDiscount([
                 {
-                    catalogObjectId: discountId,
                     uid: discountId,
-                    scope: "IN_LINE",
+                    catalogObjectId: discountId,
+                    scope: "ORDER",
                 },
             ]);
-            // const updatedOrder = {
-            //     ...order,
-            //     lineItems: order.lineItems.map((item) => {
-            //         console.log("Cart Item", cartItem);
-            //         return item.catalogObjectId ===
-            //             cartItem?.data.variations[0].variationId
-            //             ? {
-            //                   ...item,
-            //                   appliedDiscounts: [
-            //                       {
-            //                           discountUid: discountId,
-            //                           uid: discountId,
-            //                       },
-            //                   ],
-            //               }
-            //             : item;
-            //     }),
-            // };
-            // setOrder(updatedOrder);
+        } else {
+            setDiscount((prevData: any) => {
+                if (discountId === "undefined") {
+                    const updatedDiscounts = prevData?.filter((item: any) => {
+                        return item.itemCatalogId !== cartItemId;
+                    });
+
+                    return updatedDiscounts;
+                }
+                const filteredData = prevData?.filter((item: any) =>
+                    Object.keys(item.length !== 0)
+                );
+
+                const existingItemIndex = filteredData?.findIndex(
+                    (item: any) => item.itemCatalogId === cartItemId
+                );
+
+                if (existingItemIndex !== -1) {
+                    const updatedData = [...filteredData];
+                    updatedData[existingItemIndex] = {
+                        ...updatedData[existingItemIndex],
+                        catalogObjectId: discountId,
+                        uid: discountId,
+                    };
+
+                    return updatedData;
+                } else {
+                    return [
+                        ...filteredData,
+                        {
+                            catalogObjectId: discountId,
+                            uid: discountId,
+                            itemCatalogId: cartItemId,
+                            scope: "LINE_ITEM",
+                        },
+                    ];
+                }
+            });
         }
     };
 
-    const handleTax = (taxId: string) => {
-        setOrder((prevData) => {
-            return {
-                ...prevData,
-                taxes: [
+    const handleTax = (taxId: string, cartItemId?: string) => {
+        if (discountType === "global") {
+            setTax(() => {
+                if (taxId === "undefined") {
+                    return [];
+                }
+
+                return [
                     {
                         uid: taxId,
                         catalogObjectId: taxId,
                         scope: "ORDER",
                     },
-                ],
-            };
-        });
+                ];
+            });
+        } else {
+            setTax((prevData: any) => {
+                if (taxId === "undefined") {
+                    const updatedTaxes = prevData?.filter((item: any) => {
+                        return item.itemCatalogId !== cartItemId;
+                    });
+
+                    return updatedTaxes;
+                }
+
+                const filteredData = prevData?.filter((item: any) =>
+                    Object.keys(item.length !== 0)
+                );
+
+                const existingItemIndex = filteredData?.findIndex(
+                    (item: any) => item.itemCatalogId === cartItemId
+                );
+
+                if (existingItemIndex !== -1) {
+                    const updatedData = [...filteredData];
+                    updatedData[existingItemIndex] = {
+                        ...updatedData[existingItemIndex],
+                        catalogObjectId: taxId,
+                        uid: taxId,
+                    };
+
+                    return updatedData;
+                } else {
+                    return [
+                        ...filteredData,
+                        {
+                            catalogObjectId: taxId,
+                            uid: taxId,
+                            itemCatalogId: cartItemId,
+                            scope: "LINE_ITEM",
+                        },
+                    ];
+                }
+            });
+        }
     };
 
     const handleTypeChange = (value: DiscountAndTax) => {
@@ -359,13 +409,9 @@ export default function LayoutContainer({
     }, [cart]);
 
     useEffect(() => {
-        if (
-            order.discounts.length &&
-            order?.discounts[0]?.uid !== "undefined" &&
-            // order.taxes.length &&
-            // order?.taxes[0]?.uid !== "undefined" &&
-            order?.lineItems.length
-        ) {
+        const hasLineItems = order?.lineItems.length > 0;
+
+        if (hasLineItems) {
             const transformedOrder = {
                 order: {
                     ...order,
@@ -373,26 +419,80 @@ export default function LayoutContainer({
             };
             mutate(transformedOrder as any);
         }
-        console.log("Order", order);
     }, [order]);
 
     useEffect(() => {
         setTotalPrice(0);
         setPerItemPrice(0);
         setCalculatedAmount({});
-        setDiscount({});
+        setDiscount([]);
+        setTax([]);
     }, [discountType]);
 
     useEffect(() => {
         if (discountType === "global") {
-            setOrder((prevData) => {
-                return {
-                    ...prevData,
-                    discounts: [discount],
-                };
-            });
+            setOrder((prevData) => ({
+                ...prevData,
+                discounts: discount,
+                taxes: tax,
+            }));
         } else {
-            console.log(discount);
+            const uniqueDiscounts: any = Array.from(
+                new Map(
+                    discount.map((item: any) => [
+                        item.catalogObjectId,
+                        { ...item, discountUid: item.catalogObjectId },
+                    ])
+                ).values()
+            );
+
+            const uniqueTaxes: any = Array.from(
+                new Map(
+                    tax.map((item: any) => [
+                        item.catalogObjectId,
+                        { ...item, taxUid: item.catalogObjectId },
+                    ])
+                ).values()
+            );
+
+            const updatedOrder = {
+                ...order,
+                lineItems: order.lineItems.map((item) => {
+                    const appliedDiscounts = discount.filter((disc: any) => {
+                        return disc.itemCatalogId === item.catalogObjectId;
+                    });
+
+                    const appliedTaxes = tax.filter((t: any) => {
+                        return t.itemCatalogId === item.catalogObjectId;
+                    });
+
+                    return {
+                        ...item,
+                        appliedDiscounts:
+                            appliedDiscounts.length > 0
+                                ? [
+                                      {
+                                          discountUid:
+                                              appliedDiscounts[0]
+                                                  .catalogObjectId,
+                                      },
+                                  ]
+                                : [],
+                        appliedTaxes:
+                            appliedTaxes.length > 0
+                                ? [
+                                      {
+                                          taxUid: appliedTaxes[0]
+                                              .catalogObjectId,
+                                      },
+                                  ]
+                                : [],
+                    };
+                }),
+                discounts: uniqueDiscounts,
+                taxes: uniqueTaxes,
+            };
+            setOrder(updatedOrder);
         }
     }, [discount, tax]);
 

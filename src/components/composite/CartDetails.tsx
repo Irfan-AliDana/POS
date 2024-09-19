@@ -14,7 +14,7 @@ const useStyles = createStyles(({ token, css }) => ({
 
 type CartDetailsProps = {
     cart: CartItem;
-    handleDiscount: (value: string, cart?: CartItem) => void;
+    handleDiscount: (value: string, productId: string) => void;
     handleTax: (value: string, productId: string) => void;
     discountOptions: { label: string; value: number }[];
     taxOptions: { label: string; value: number }[];
@@ -55,7 +55,10 @@ export default function CartDetails({
                         showSearch
                         placeholder="Select Discount"
                         handleDropdown={(value) => {
-                            handleDiscount(`${value}`, cart);
+                            handleDiscount(
+                                `${value}`,
+                                cart.data.variations[0].variationId
+                            );
                         }}
                         options={discountOptions}
                     />
@@ -63,7 +66,10 @@ export default function CartDetails({
                         showSearch
                         placeholder="Select Tax"
                         handleDropdown={(value) =>
-                            handleTax(`${value}`, cart.data.catalogObjectId)
+                            handleTax(
+                                `${value}`,
+                                cart.data.variations[0].variationId
+                            )
                         }
                         options={taxOptions}
                     />
