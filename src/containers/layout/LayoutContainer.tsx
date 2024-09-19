@@ -219,13 +219,18 @@ export default function LayoutContainer({
 
     const handleDiscount = (discountId: string, cartItemId?: string) => {
         if (discountType === "global") {
-            setDiscount([
-                {
-                    uid: discountId,
-                    catalogObjectId: discountId,
-                    scope: "ORDER",
-                },
-            ]);
+            setDiscount(() => {
+                if (discountId === "undefined") {
+                    return [];
+                }
+                return [
+                    {
+                        uid: discountId,
+                        catalogObjectId: discountId,
+                        scope: "ORDER",
+                    },
+                ];
+            });
         } else {
             setDiscount((prevData: any) => {
                 if (discountId === "undefined") {
