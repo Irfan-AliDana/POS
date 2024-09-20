@@ -15,6 +15,9 @@ const useStyles = createStyles(({ token, css }) => ({
     container: css`
         padding: ${token.margin}px;
     `,
+    spinner: css`
+        height: calc(100vh - 158px);
+    `,
 }));
 
 type ProductProps = SearchBarProps & {
@@ -51,7 +54,7 @@ export default function ProductList({
                 <Flex
                     justify="center"
                     align="center"
-                    style={{ height: "100vh" }}
+                    className={styles.spinner}
                 >
                     <Spinner />
                 </Flex>
@@ -68,6 +71,7 @@ export default function ProductList({
                                             handleRemoveFromCart
                                         }
                                         cart={cart}
+                                        key={item.catalogObjectId}
                                     />
                                 ))}
                             </Flex>

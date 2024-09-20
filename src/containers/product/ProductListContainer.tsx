@@ -9,8 +9,9 @@ import { useCartStore } from "@/src/zustand/store/cart-store";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Flex } from "antd";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
+import _ from "underscore";
 
 type Variation = {
     variationId: string;
@@ -54,6 +55,7 @@ export default function ProductListContainer() {
     const handleAddToCart = useCartStore((state) => state.addToCart);
     const handleRemoveFromCart = useCartStore((state) => state.removeFromCart);
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [category, setCategory] = useState("");
 
     const router = useRouter();
@@ -61,6 +63,11 @@ export default function ProductListContainer() {
     const { ref, inView } = useInView();
 
     const { session, sessionIsFetched } = useSession();
+
+    const search = useCallback(
+        _.debounce((value: string) => setDebouncedSearch(value), 500),
+        []
+    );
 
     const { data: productCat, error: productCatError } = useQuery({
         queryKey: ["categories", sessionIsFetched],
@@ -85,10 +92,15 @@ export default function ProductListContainer() {
         isFetchingNextPage,
         isLoading,
     } = useInfiniteQuery({
-        queryKey: ["infiniteProducts", searchQuery, category, sessionIsFetched],
+        queryKey: [
+            "infiniteProducts",
+            debouncedSearch,
+            category,
+            sessionIsFetched,
+        ],
         queryFn: ({ pageParam }: { pageParam: string }) =>
             useFetch(
-                `${BASE_URL_API}/api/search-catalog-items?categoryId=${category}&textFilter=${searchQuery}&cursor=${pageParam}`,
+                `${BASE_URL_API}/api/search-catalog-items?categoryId=${category}&textFilter=${debouncedSearch}&cursor=${pageParam}`,
                 {
                     Authorization: session?.token,
                 }
@@ -105,10 +117,11 @@ export default function ProductListContainer() {
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
+        search(e.target.value);
     };
 
-    const handleDropdown = (value: string) => {
-        setCategory(value || "");
+    const handleDropdown = (value: string | number) => {
+        setCategory((value as string) || "");
     };
 
     useEffect(() => {

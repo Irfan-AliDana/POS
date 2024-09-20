@@ -11,7 +11,8 @@ import { BASE_URL_API } from "@/src/utils/constants";
 import SelectMod from "@/src/components/base/Select";
 import { useSession } from "@/src/hooks/useSession";
 import { useFetch } from "@/src/hooks/useFetch";
-import { CartItem } from "../product/ProductListContainer";
+import Spinner from "@/src/components/base/Spinner";
+import { usePathname } from "next/navigation";
 
 const useStyles = createStyles(({ token, css }) => ({
     cartItem: css`
@@ -84,11 +85,11 @@ const getItems = (itemsCount: any, showDrawer: () => void) => {
     const item: MenuItem[] = [
         {
             label: <Link href="/login">Login</Link>,
-            key: "login",
+            key: "/login",
         },
         {
             label: <Link href="/">Home</Link>,
-            key: "home",
+            key: "/",
         },
         {
             label: (
@@ -128,6 +129,7 @@ export default function LayoutContainer({
     children: React.ReactNode;
 }) {
     const { styles } = useStyles();
+    const pathname = usePathname();
 
     const [discount, setDiscount] = useState<any>([]);
     const [tax, setTax] = useState<any>([]);
@@ -137,7 +139,6 @@ export default function LayoutContainer({
         defaultOrder as CalculateOrderRequestDto
     );
     const [discountType, setDiscountType] = useState<DiscountAndTax>("global");
-    const [totalPrice, setTotalPrice] = useState(0);
     const [perItemPrice, setPerItemPrice] = useState(0);
 
     const cart = useCartStore((state) => state.cart);
@@ -178,7 +179,7 @@ export default function LayoutContainer({
         })
     );
 
-    const { mutate } = useMutation({
+    const { mutate, isPending } = useMutation({
         mutationFn: (order) =>
             useFetch(
                 `${BASE_URL_API}/api/calculate-order`,
@@ -359,11 +360,15 @@ export default function LayoutContainer({
             </Space>
             <Space>
                 <h4>Total</h4>
-                <span>
-                    $
-                    {calculatedAmount?.netAmounts?.totalMoney.amount / 100 ||
-                        "0"}
-                </span>
+                {isPending ? (
+                    <Spinner size={20} />
+                ) : (
+                    <span>
+                        $
+                        {calculatedAmount?.netAmounts?.totalMoney.amount /
+                            100 || "0"}
+                    </span>
+                )}
             </Space>
         </Space>
     );
@@ -371,14 +376,20 @@ export default function LayoutContainer({
     const totalOnlyFooter = (
         <Space>
             <h4>Total</h4>
-            <span>
-                ${calculatedAmount?.netAmounts?.totalMoney.amount / 100 || "0"}
-            </span>
+            {isPending ? (
+                <Spinner size={20} />
+            ) : (
+                <span>
+                    $
+                    {calculatedAmount?.netAmounts?.totalMoney.amount / 100 ||
+                        "0"}
+                </span>
+            )}
         </Space>
     );
 
     const header = (
-        <Flex justify="space-between">
+        <Flex justify="space-between" align="center">
             <p>{`My Cart (${itemsCount})`}</p>
             <div style={{ width: "50%" }}>
                 <SelectMod
@@ -427,7 +438,6 @@ export default function LayoutContainer({
     }, [order]);
 
     useEffect(() => {
-        setTotalPrice(0);
         setPerItemPrice(0);
         setCalculatedAmount({});
         setDiscount([]);
@@ -502,7 +512,10 @@ export default function LayoutContainer({
     }, [discount, tax]);
 
     return (
-        <AppLayout items={getItems(itemsCount, handleShowDrawer)}>
+        <AppLayout
+            items={getItems(itemsCount, handleShowDrawer)}
+            currentPath={pathname}
+        >
             <Drawer
                 title={header}
                 onClose={handleCloseDrawer}

@@ -23,13 +23,17 @@ const useStyles = createStyles(({ token, css }) => ({
     `,
 }));
 
+type AppLayoutProps = {
+    children: React.ReactNode;
+    items: MenuItem[];
+    currentPath: string;
+};
+
 export default function AppLayout({
     children,
     items,
-}: {
-    children: React.ReactNode;
-    items: MenuItem[];
-}) {
+    currentPath,
+}: AppLayoutProps) {
     const { styles } = useStyles();
     const { Header, Content } = Layout;
 
@@ -42,6 +46,7 @@ export default function AppLayout({
                     mode="horizontal"
                     items={items}
                     className={styles.menu}
+                    selectedKeys={[currentPath]}
                 />
             </Header>
             <Content>{children}</Content>
