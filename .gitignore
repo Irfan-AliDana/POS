@@ -40,3 +40,5 @@ next-env.d.ts
 tokens-transformer.secret.json
 
 certificates
+# Sentry Config File
+.env.sentry-build-plugin
