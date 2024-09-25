@@ -40,13 +40,18 @@ export default function CartDetails({
             className={styles.container}
         >
             <Flex vertical gap={10}>
-                <h3 style={{ fontSize: "16px", fontWeight: "bold" }}>
+                <h3
+                    style={{ fontSize: "16px", fontWeight: "bold" }}
+                    data-testid="name"
+                >
                     {cart.data.name}
                 </h3>
                 <Space direction="vertical">
-                    <p>Price: ${cart.data.variations[0].price.amount / 100}</p>
-                    <p>Quantity: {cart.quantity}</p>
-                    <p>Final: ${finalPrice}</p>
+                    <p data-testid="price">
+                        Price: ${cart.data.variations[0].price.amount / 100}
+                    </p>
+                    <p data-testid="quantity">Quantity: {cart.quantity}</p>
+                    <p data-testid="final-price">Final: ${finalPrice}</p>
                 </Space>
             </Flex>
             {type === "inline" && (

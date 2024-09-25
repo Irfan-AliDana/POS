@@ -57,10 +57,10 @@ export default function Product({
             <Flex justify="space-between">
                 <p className={styles.name}>{item.name}</p>
                 <p className={styles.price}>
+                    $
                     {item.variations.map(
                         (variation) => variation.price.amount / 100
                     )}
-                    $
                 </p>
             </Flex>
             <div style={{ marginLeft: "auto" }}>

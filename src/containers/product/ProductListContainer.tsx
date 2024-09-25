@@ -69,6 +69,10 @@ export default function ProductListContainer() {
         []
     );
 
+    if (debouncedSearch === "error") {
+        throw new Error("App Crashed");
+    }
+
     const { data: productCat, error: productCatError } = useQuery({
         queryKey: ["categories", sessionIsFetched],
         queryFn: () =>
