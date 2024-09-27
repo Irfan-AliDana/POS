@@ -10,9 +10,9 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { BASE_URL_API } from "@/src/utils/constants";
 import SelectMod from "@/src/components/base/Select";
 import { useSession } from "@/src/hooks/useSession";
-import { useFetch } from "@/src/hooks/useFetch";
 import Spinner from "@/src/components/base/Spinner";
 import { usePathname } from "next/navigation";
+import { customFetch } from "@/src/utils/lib";
 
 const useStyles = createStyles(({ token, css }) => ({
     cartItem: css`
@@ -79,9 +79,7 @@ type DiscountDto = {
 
 export type DiscountAndTax = "global" | "inline";
 
-const getItems = (itemsCount: any, showDrawer: () => void) => {
-    const { styles } = useStyles();
-
+const getItems = (itemsCount: any, showDrawer: () => void, styles: any) => {
     const item: MenuItem[] = [
         {
             label: <Link href="/login">Login</Link>,
@@ -150,7 +148,7 @@ export default function LayoutContainer({
     const { data: discountData } = useQuery({
         queryKey: ["discount", sessionIsFetched],
         queryFn: () =>
-            useFetch(`${BASE_URL_API}/api/get-discounts?type=DISCOUNT`, {
+            customFetch(`${BASE_URL_API}/api/get-discounts?type=DISCOUNT`, {
                 Authorization: session?.token,
             }),
         enabled: !!session?.token,
@@ -159,7 +157,7 @@ export default function LayoutContainer({
     const { data: taxData } = useQuery({
         queryKey: ["tax", sessionIsFetched],
         queryFn: () =>
-            useFetch(`${BASE_URL_API}/api/get-tax?type=TAX`, {
+            customFetch(`${BASE_URL_API}/api/get-tax?type=TAX`, {
                 Authorization: session?.token,
             }),
         enabled: !!session?.token,
@@ -181,7 +179,7 @@ export default function LayoutContainer({
 
     const { mutate, isPending } = useMutation({
         mutationFn: (order) =>
-            useFetch(
+            customFetch(
                 `${BASE_URL_API}/api/calculate-order`,
                 {
                     "Content-Type": "application/json",
@@ -435,7 +433,7 @@ export default function LayoutContainer({
             };
             mutate(transformedOrder as any);
         }
-    }, [order]);
+    }, [order, mutate]);
 
     useEffect(() => {
         setPerItemPrice(0);
@@ -513,7 +511,7 @@ export default function LayoutContainer({
 
     return (
         <AppLayout
-            items={getItems(itemsCount, handleShowDrawer)}
+            items={getItems(itemsCount, handleShowDrawer, styles)}
             currentPath={pathname}
         >
             <Drawer

@@ -2,9 +2,9 @@
 
 import Spinner from "@/src/components/base/Spinner";
 import ProductList from "@/src/components/layouts/ProductList";
-import { useFetch } from "@/src/hooks/useFetch";
 import { useSession } from "@/src/hooks/useSession";
 import { BASE_URL_API } from "@/src/utils/constants";
+import { customFetch } from "@/src/utils/lib";
 import { useCartStore } from "@/src/zustand/store/cart-store";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Flex } from "antd";
@@ -76,7 +76,7 @@ export default function ProductListContainer() {
     const { data: productCat, error: productCatError } = useQuery({
         queryKey: ["categories", sessionIsFetched],
         queryFn: () =>
-            useFetch(`${BASE_URL_API}/api/list-categories`, {
+            customFetch(`${BASE_URL_API}/api/list-categories`, {
                 Authorization: session?.token,
             }),
         enabled: !!session?.token,
@@ -103,7 +103,7 @@ export default function ProductListContainer() {
             sessionIsFetched,
         ],
         queryFn: ({ pageParam }: { pageParam: string }) =>
-            useFetch(
+            customFetch(
                 `${BASE_URL_API}/api/search-catalog-items?categoryId=${category}&textFilter=${debouncedSearch}&cursor=${pageParam}`,
                 {
                     Authorization: session?.token,
