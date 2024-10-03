@@ -7,8 +7,6 @@ import { useRouter } from "next/navigation";
 export default function AuthContainer() {
     const router = useRouter();
 
-    const { session } = useSession();
-
     const handleLogin = async () => {
         const url = "http://myapp.local:5000/api/login";
         const res = await fetch(url);
@@ -21,10 +19,6 @@ export default function AuthContainer() {
 
         router.push(result.url);
     };
-
-    if (session?.isLoggedIn) {
-        return router.push("/") as React.ReactNode;
-    }
 
     return <LoginCard handleLogin={handleLogin} />;
 }

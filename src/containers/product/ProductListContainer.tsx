@@ -58,8 +58,6 @@ export default function ProductListContainer() {
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [category, setCategory] = useState("");
 
-    const router = useRouter();
-
     const { ref, inView } = useInView();
 
     const { session, sessionIsFetched } = useSession();
@@ -136,10 +134,6 @@ export default function ProductListContainer() {
 
     if (productCatError || searchError) {
         throw new Error(productCatError?.message);
-    }
-
-    if (!session?.isLoggedIn) {
-        return router.push("/login") as React.ReactNode;
     }
 
     return (
