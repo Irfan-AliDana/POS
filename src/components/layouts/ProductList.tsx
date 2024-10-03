@@ -14,6 +14,9 @@ import Spinner from "../base/Spinner";
 const useStyles = createStyles(({ token, css }) => ({
     container: css`
         padding: ${token.margin}px;
+        max-width: 70%;
+        margin-left: auto;
+        margin-right: auto;
     `,
     spinner: css`
         height: calc(100vh - 158px);
