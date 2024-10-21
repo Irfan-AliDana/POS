@@ -1,4 +1,4 @@
-import { BASE_URL } from "@/src/utils/constants";
+import { BASE_URL, BASE_URL_API } from "@/src/utils/constants";
 import { SessionData, sessionOptions } from "@/src/utils/lib";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
     try {
         const responseData = await fetch(
-            `http://localhost:5000/api/access-token?code=${code}`
+            `${BASE_URL_API}/api/access-token?code=${code}`
         );
 
         if (!responseData.ok) {
