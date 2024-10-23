@@ -6,10 +6,9 @@ import {
     Item,
 } from "@/src/containers/product/ProductListContainer";
 import Product from "../composite/Product";
-import { Flex } from "antd";
+import { Flex, Skeleton } from "antd";
 import SearchBar, { SearchBarProps } from "../composite/SearchBar";
 import { createStyles } from "antd-style";
-import Spinner from "../base/Spinner";
 
 const useStyles = createStyles(({ token, css }) => ({
     container: css`
@@ -18,8 +17,9 @@ const useStyles = createStyles(({ token, css }) => ({
         margin-left: auto;
         margin-right: auto;
     `,
-    spinner: css`
-        height: calc(100vh - 158px);
+    skeletonFlex: css`
+        margin: 15px 20px;
+        width: 250px;
     `,
 }));
 
@@ -28,6 +28,32 @@ type ProductProps = SearchBarProps & {
     handleAddToCart: (productId: string, data: Item) => void;
     handleRemoveFromCart: (productId: string) => void;
     cart: Cart;
+};
+
+const ProductCardSkeleton = () => {
+    const { styles } = useStyles();
+
+    return (
+        <Flex
+            vertical
+            justify="center"
+            gap={18}
+            className={styles.skeletonFlex}
+        >
+            <Skeleton.Input style={{ width: "250px", height: 300 }} active />
+
+            <Skeleton.Input style={{ width: "100%" }} active />
+
+            <Flex justify="flex-end">
+                <Skeleton.Input
+                    active
+                    style={{
+                        width: "50%",
+                    }}
+                />
+            </Flex>
+        </Flex>
+    );
 };
 
 export default function ProductList({
@@ -54,12 +80,10 @@ export default function ProductList({
             />
 
             {loading ? (
-                <Flex
-                    justify="center"
-                    align="center"
-                    className={styles.spinner}
-                >
-                    <Spinner />
+                <Flex justify="center" wrap>
+                    {Array.from({ length: 8 }).map((_, index) => (
+                        <ProductCardSkeleton key={index} />
+                    ))}
                 </Flex>
             ) : (
                 <div>
