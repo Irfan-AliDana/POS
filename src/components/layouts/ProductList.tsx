@@ -26,7 +26,6 @@ const useStyles = createStyles(({ token, css }) => ({
 type ProductProps = SearchBarProps & {
     data: Data | undefined;
     handleAddToCart: (productId: string, data: Item) => void;
-    handleRemoveFromCart: (productId: string) => void;
     cart: Cart;
 };
 
@@ -60,7 +59,6 @@ export default function ProductList({
     data,
     cart,
     handleAddToCart,
-    handleRemoveFromCart,
     value,
     handleSearch,
     loading,
@@ -87,22 +85,30 @@ export default function ProductList({
                 </Flex>
             ) : (
                 <div>
-                    {data &&
+                    {data?.pages[0].items.length ? (
                         data.pages.map((page, index) => (
                             <Flex justify="center" wrap key={index}>
                                 {page.items.map((item) => (
                                     <Product
                                         item={item}
                                         handleAddToCart={handleAddToCart}
-                                        handleRemoveFromCart={
-                                            handleRemoveFromCart
-                                        }
                                         cart={cart}
                                         key={item.catalogObjectId}
                                     />
                                 ))}
                             </Flex>
-                        ))}
+                        ))
+                    ) : (
+                        <Flex
+                            justify="center"
+                            align="center"
+                            style={{
+                                height: "calc(100vh - 158px)",
+                            }}
+                        >
+                            <h2>No Item Found</h2>
+                        </Flex>
+                    )}
                 </div>
             )}
         </Flex>

@@ -140,10 +140,15 @@ export default function LayoutContainer({
     const [perItemPrice, setPerItemPrice] = useState(0);
 
     const cart = useCartStore((state) => state.cart);
+    const handleAddToCart = useCartStore((state) => state.addToCart);
+    const handleRemoveFromCart = useCartStore((state) => state.removeFromCart);
+    const handleDeleteFromCart = useCartStore((state) => state.deleteFromCart);
 
     const cartKeys = Object.keys(cart);
 
     const { session, sessionIsFetched } = useSession();
+
+    console.log("Cart", cart);
 
     const { data: discountData } = useQuery({
         queryKey: ["discount", sessionIsFetched],
@@ -509,6 +514,12 @@ export default function LayoutContainer({
         }
     }, [discount, tax]);
 
+    useEffect(() => {
+        if (Object.keys(cart).length <= 0) {
+            setCalculatedAmount({});
+        }
+    }, [cart]);
+
     return (
         <AppLayout
             items={getItems(itemsCount, handleShowDrawer, styles)}
@@ -552,6 +563,9 @@ export default function LayoutContainer({
                                                   .amount / 100
                                     }
                                     type={discountType}
+                                    handleAddToCart={handleAddToCart}
+                                    handleRemoveFromCart={handleRemoveFromCart}
+                                    handleDeleteFromCart={handleDeleteFromCart}
                                 />
                             </div>
                         );

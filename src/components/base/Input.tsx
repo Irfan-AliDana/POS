@@ -21,6 +21,7 @@ export type InputModProps = {
     size?: "small" | "middle" | "large";
     search?: boolean;
     loading?: boolean;
+    allowClear?: boolean;
 };
 
 export default function InputMod({
@@ -31,6 +32,7 @@ export default function InputMod({
     size = "middle",
     search = false,
     loading,
+    allowClear = false,
 }: InputModProps) {
     const { styles } = useStyles();
 
@@ -51,6 +53,7 @@ export default function InputMod({
             onChange={handleSearch}
             type={type}
             size={size}
+            allowClear={allowClear}
         />
     );
 }

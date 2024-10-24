@@ -53,7 +53,6 @@ export type Data = {
 export default function ProductListContainer() {
     const cart = useCartStore((state) => state.cart);
     const handleAddToCart = useCartStore((state) => state.addToCart);
-    const handleRemoveFromCart = useCartStore((state) => state.removeFromCart);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [category, setCategory] = useState("");
@@ -142,7 +141,6 @@ export default function ProductListContainer() {
                 data={searchedProductData}
                 cart={cart}
                 handleAddToCart={handleAddToCart}
-                handleRemoveFromCart={handleRemoveFromCart}
                 value={searchQuery}
                 handleSearch={handleSearch}
                 loading={isLoading}

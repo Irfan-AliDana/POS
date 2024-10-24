@@ -5,6 +5,7 @@ type CartStore = {
     cart: Cart;
     addToCart: (productId: string, data: Item) => void;
     removeFromCart: (productId: string) => void;
+    deleteFromCart: (productId: string) => void;
 };
 
 export const useCartStore = create<CartStore>((set) => ({
@@ -28,6 +29,13 @@ export const useCartStore = create<CartStore>((set) => ({
             } else {
                 delete updatedCart[productId];
             }
+            return { cart: updatedCart };
+        });
+    },
+    deleteFromCart: (productId) => {
+        set((state) => {
+            const updatedCart = { ...state.cart };
+            delete updatedCart[productId];
             return { cart: updatedCart };
         });
     },

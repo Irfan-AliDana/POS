@@ -22,24 +22,15 @@ const useStyles = createStyles(({ token, css }) => ({
     price: css`
         font-weight: bold;
     `,
-    quantity: css`
-        margin: 0px ${token.margin}px;
-    `,
 }));
 
 type ProductProps = {
     item: Item;
     handleAddToCart: (productId: string, data: Item) => void;
-    handleRemoveFromCart: (productId: string) => void;
     cart: Cart;
 };
 
-export default function Product({
-    item,
-    cart,
-    handleAddToCart,
-    handleRemoveFromCart,
-}: ProductProps) {
+export default function Product({ item, cart, handleAddToCart }: ProductProps) {
     const { styles } = useStyles();
 
     return (
@@ -64,35 +55,14 @@ export default function Product({
                 </p>
             </Flex>
             <div style={{ marginLeft: "auto" }}>
-                {cart[item.catalogObjectId] ? (
-                    <div>
-                        <ButtonMod
-                            onClick={() =>
-                                handleRemoveFromCart(item.catalogObjectId)
-                            }
-                        >
-                            -
-                        </ButtonMod>
-                        <span className={styles.quantity}>
-                            {cart[item.catalogObjectId]?.quantity}
-                        </span>
-                        <ButtonMod
-                            onClick={() =>
-                                handleAddToCart(item.catalogObjectId, item)
-                            }
-                        >
-                            +
-                        </ButtonMod>
-                    </div>
-                ) : (
-                    <ButtonMod
-                        onClick={() =>
-                            handleAddToCart(item.catalogObjectId, item)
-                        }
-                    >
-                        Add To Cart
-                    </ButtonMod>
-                )}
+                <ButtonMod
+                    onClick={() => handleAddToCart(item.catalogObjectId, item)}
+                >
+                    Add To Cart{" "}
+                    {cart[item.catalogObjectId]
+                        ? ` (${cart[item.catalogObjectId]?.quantity})`
+                        : ""}
+                </ButtonMod>
             </div>
         </Flex>
     );

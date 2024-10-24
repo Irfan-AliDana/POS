@@ -48,8 +48,8 @@ export default function SearchBar({
                         placeholder="Search items by category or name"
                         value={value}
                         handleSearch={handleSearch}
-                        search
                         loading={loading}
+                        allowClear
                     />
                     <SearchMod
                         showSearch
