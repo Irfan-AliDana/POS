@@ -38,7 +38,7 @@ export default function Product({ item, cart, handleAddToCart }: ProductProps) {
             <div>
                 <Image
                     alt="cloth"
-                    src="/jeans.jpg"
+                    src={item.imageUrl ? item.imageUrl : "/jeans.jpg"}
                     width={250}
                     height={300}
                     className={styles.img}

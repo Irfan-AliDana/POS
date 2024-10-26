@@ -23,15 +23,19 @@ const useStyles = createStyles(({ token, css }) => ({
 
 type CartDetailsProps = {
     cart: CartItem;
-    handleDiscount: (value: string, productId: string) => void;
-    handleTax: (value: string, productId: string) => void;
+    handleDiscount: (value: string, type: string, productId: string) => void;
+    handleTax: (value: string, type: string, productId: string) => void;
     discountOptions: { label: string; value: number }[];
     taxOptions: { label: string; value: number }[];
     finalPrice: number;
     type: DiscountAndTax;
     handleAddToCart: (productId: string, data: Item) => void;
     handleRemoveFromCart: (productId: string) => void;
-    handleDeleteFromCart: (productId: string) => void;
+    handleDeleteFromCart: (
+        productId: string,
+        discountId: string,
+        cartItemId: string
+    ) => void;
 };
 
 export default function CartDetails({
@@ -74,7 +78,11 @@ export default function CartDetails({
                 <Flex justify="right" style={{ paddingBottom: "10px" }}>
                     <CloseCircleOutlined
                         onClick={() =>
-                            handleDeleteFromCart(cart.data.catalogObjectId)
+                            handleDeleteFromCart(
+                                cart.data.catalogObjectId,
+                                "undefined",
+                                cart.data.variations[0].variationId
+                            )
                         }
                     />
                 </Flex>
@@ -84,6 +92,7 @@ export default function CartDetails({
                     handleDropdown={(value) => {
                         handleDiscount(
                             `${value}`,
+                            "inline",
                             cart.data.variations[0].variationId
                         );
                     }}
@@ -95,6 +104,7 @@ export default function CartDetails({
                     handleDropdown={(value) =>
                         handleTax(
                             `${value}`,
+                            "inline",
                             cart.data.variations[0].variationId
                         )
                     }
