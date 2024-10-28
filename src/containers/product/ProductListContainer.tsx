@@ -4,14 +4,54 @@ import Spinner from "@/src/components/base/Spinner";
 import ProductList from "@/src/components/layouts/ProductList";
 import { useSession } from "@/src/hooks/useSession";
 import { BASE_URL_API } from "@/src/utils/constants";
-import { customFetch } from "@/src/utils/lib";
+import { customFetch, fetcher } from "@/src/utils/lib";
 import { useCartStore } from "@/src/zustand/store/cart-store";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Flex } from "antd";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Flex, Skeleton } from "antd";
+import { createStyles } from "antd-style";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useInView } from "react-intersection-observer";
+import useSWRInfinite from "swr/infinite";
 import _ from "underscore";
+
+const useStyles = createStyles(({ token, css }) => ({
+    container: css`
+        padding: ${token.margin}px;
+        max-width: 70%;
+        margin-left: auto;
+        margin-right: auto;
+    `,
+    skeletonFlex: css`
+        margin: 15px 20px;
+        width: 250px;
+    `,
+}));
+
+const ProductCardSkeleton = () => {
+    const { styles } = useStyles();
+
+    return (
+        <Flex
+            vertical
+            justify="center"
+            gap={18}
+            className={styles.skeletonFlex}
+        >
+            <Skeleton.Input style={{ width: "250px", height: 300 }} active />
+
+            <Skeleton.Input style={{ width: "100%" }} active />
+
+            <Flex justify="flex-end">
+                <Skeleton.Input
+                    active
+                    style={{
+                        width: "50%",
+                    }}
+                />
+            </Flex>
+        </Flex>
+    );
+};
 
 type Variation = {
     variationId: string;
@@ -50,7 +90,13 @@ export type Data = {
     pages: Items[];
 };
 
-export default function ProductListContainer() {
+export default function ProductListContainer({
+    initialProducts,
+}: {
+    initialProducts: Items;
+}) {
+    const { styles } = useStyles();
+
     const cart = useCartStore((state) => state.cart);
     const handleAddToCart = useCartStore((state) => state.addToCart);
     const [searchQuery, setSearchQuery] = useState("");
@@ -86,35 +132,34 @@ export default function ProductListContainer() {
         })
     );
 
+    const getKey = (pageIndex: number, previousPageData: any) => {
+        if (!sessionIsFetched) {
+            return null;
+        }
+        if (previousPageData?.cursor === "") {
+            return null;
+        }
+        const cursor = previousPageData?.cursor || "";
+        return `${BASE_URL_API}/api/search-catalog-items?categoryId=${category}&textFilter=${debouncedSearch}&cursor=${cursor}`;
+    };
+
     const {
         data: searchedProductData,
         error: searchError,
-        fetchNextPage,
-        isFetchingNextPage,
+        size,
+        setSize,
         isLoading,
-    } = useInfiniteQuery({
-        queryKey: [
-            "infiniteProducts",
-            debouncedSearch,
-            category,
-            sessionIsFetched,
-        ],
-        queryFn: ({ pageParam }: { pageParam: string }) =>
-            customFetch(
-                `${BASE_URL_API}/api/search-catalog-items?categoryId=${category}&textFilter=${debouncedSearch}&cursor=${pageParam}`,
-                {
-                    Authorization: session?.token,
-                }
-            ).then((data) => data.result),
-        initialPageParam: "",
-        getNextPageParam: (lastPage) => {
-            if (lastPage?.cursor !== "") {
-                return lastPage.cursor;
-            }
-            return undefined;
-        },
-        enabled: !!session?.token,
-    });
+        isValidating,
+    } = useSWRInfinite(
+        getKey,
+        (url) => fetcher(url, session?.token).then((data) => data.result),
+        {
+            revalidateFirstPage: false,
+            initialSize: 1,
+            fallbackData: [initialProducts],
+            revalidateOnMount: false,
+        }
+    );
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
@@ -126,17 +171,17 @@ export default function ProductListContainer() {
     };
 
     useEffect(() => {
-        if (inView) {
-            fetchNextPage();
+        if (inView && !isLoading) {
+            setSize(size + 1);
         }
-    }, [fetchNextPage, inView]);
+    }, [isLoading, inView]);
 
     if (productCatError || searchError) {
         throw new Error(productCatError?.message);
     }
 
     return (
-        <div>
+        <Flex justify="center" vertical className={styles.container}>
             <ProductList
                 data={searchedProductData}
                 cart={cart}
@@ -148,12 +193,14 @@ export default function ProductListContainer() {
                 handleDropdown={handleDropdown}
             />
             <div ref={ref} style={{ padding: "10px 0" }}>
-                {isFetchingNextPage && (
-                    <Flex justify="center">
-                        <Spinner size={30} />
+                {isValidating && (
+                    <Flex justify="center" wrap>
+                        {Array.from({ length: 8 }).map((_, index) => (
+                            <ProductCardSkeleton key={index} />
+                        ))}
                     </Flex>
                 )}
             </div>
-        </div>
+        </Flex>
     );
 }

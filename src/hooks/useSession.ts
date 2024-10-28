@@ -1,11 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import { customFetch } from "../utils/lib";
+import { fetcher } from "../utils/lib";
+import useSWR from "swr";
 
 export const useSession = () => {
-    const { data: session, isFetched: sessionIsFetched } = useQuery({
-        queryKey: ["session"],
-        queryFn: () => customFetch("/api/get-session"),
-    });
+    const { data: session, isValidating } = useSWR("/api/get-session", fetcher);
+
+    const sessionIsFetched = !isValidating && session !== undefined;
 
     return { session, sessionIsFetched };
 };

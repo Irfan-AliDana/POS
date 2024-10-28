@@ -53,3 +53,11 @@ export const customFetch = async (
         throw new Error("Something went wrong");
     }
 };
+
+export const fetcher = (url: string, token?: string) =>
+    fetch(url, { headers: token ? { Authorization: token } : undefined }).then(
+        (res) => {
+            if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+            return res.json();
+        }
+    );

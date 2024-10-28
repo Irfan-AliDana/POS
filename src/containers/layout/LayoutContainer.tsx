@@ -6,13 +6,14 @@ import { createStyles } from "antd-style";
 import { useEffect, useState } from "react";
 import CartDetails from "@/src/components/composite/CartDetails";
 import { useCartStore } from "@/src/zustand/store/cart-store";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { BASE_URL_API } from "@/src/utils/constants";
 import SelectMod from "@/src/components/base/Select";
 import { useSession } from "@/src/hooks/useSession";
 import Spinner from "@/src/components/base/Spinner";
 import { usePathname } from "next/navigation";
-import { customFetch } from "@/src/utils/lib";
+import { customFetch, fetcher } from "@/src/utils/lib";
+import useSWR from "swr";
 
 const useStyles = createStyles(({ token, css }) => ({
     cartItem: css`
@@ -148,23 +149,17 @@ export default function LayoutContainer({
 
     const { session, sessionIsFetched } = useSession();
 
-    const { data: discountData } = useQuery({
-        queryKey: ["discount", sessionIsFetched],
-        queryFn: () =>
-            customFetch(`${BASE_URL_API}/api/get-discounts?type=DISCOUNT`, {
-                Authorization: session?.token,
-            }),
-        enabled: !!session?.token,
-    });
+    const { data: discountData } = useSWR(
+        sessionIsFetched
+            ? `${BASE_URL_API}/api/get-discounts?type=DISCOUNT`
+            : null,
+        (url) => fetcher(url, session?.token)
+    );
 
-    const { data: taxData } = useQuery({
-        queryKey: ["tax", sessionIsFetched],
-        queryFn: () =>
-            customFetch(`${BASE_URL_API}/api/get-tax?type=TAX`, {
-                Authorization: session?.token,
-            }),
-        enabled: !!session?.token,
-    });
+    const { data: taxData } = useSWR(
+        sessionIsFetched ? `${BASE_URL_API}/api/get-tax?type=TAX` : null,
+        (url) => fetcher(url, session?.token)
+    );
 
     const transformedDiscount = discountData?.result.map(
         (discount: { id: string; name: string; percentage: string }) => ({
