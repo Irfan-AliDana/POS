@@ -8,6 +8,10 @@ export type SelectModProps = {
     options: { label: string; value: string | number }[];
     defaultValue?: string;
     allowClear?: boolean;
+    mode?: "multiple" | "tags" | undefined;
+    handleDeselect?: (value: string) => void;
+    handleClear?: () => void;
+    onSelect?: boolean;
 };
 
 const useStyles = createStyles(({ token, css }) => ({
@@ -27,6 +31,10 @@ export default function SelectMod({
     options,
     defaultValue,
     allowClear = true,
+    mode = undefined,
+    handleDeselect,
+    handleClear,
+    onSelect = false,
 }: SelectModProps) {
     const { styles } = useStyles();
 
@@ -34,12 +42,16 @@ export default function SelectMod({
         <Select
             showSearch={showSearch}
             placeholder={placeholder}
-            onChange={handleDropdown}
+            onChange={!onSelect ? handleDropdown : () => {}}
             optionFilterProp="label"
             options={options}
             className={styles.select}
             allowClear={allowClear}
             defaultValue={defaultValue}
+            mode={mode}
+            onDeselect={handleDeselect}
+            onClear={handleClear}
+            onSelect={onSelect ? handleDropdown : () => {}}
         />
     );
 }

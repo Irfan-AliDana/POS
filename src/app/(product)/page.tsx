@@ -1,26 +1,10 @@
 import ProductListContainer from "@/src/containers/product/ProductListContainer";
 import { BASE_URL_API } from "@/src/utils/constants";
-
-// async function getSession() {
-//     const res = await fetch("https://myapp.local:3000/api/get-session", {
-//         method: "GET",
-//         cache: "no-store",
-//     });
-
-//     if (!res.ok) {
-//         throw new Error("Failed to fetch session token");
-//     }
-
-//     const data = await res.json();
-
-//     console.log("Data", data);
-
-//     return data;
-// }
+import { SessionData, sessionOptions } from "@/src/utils/lib";
+import { getIronSession } from "iron-session";
+import { cookies } from "next/headers";
 
 async function getProducts(token: string) {
-    console.log("Token", token);
-
     const res = await fetch(
         `${BASE_URL_API}/api/search-catalog-items?categoryId=&textFilter=&cursor=`,
         {
@@ -40,10 +24,12 @@ async function getProducts(token: string) {
 }
 
 export default async function ProductPage() {
-    // const token = await getSession();
+    const session = await getIronSession<SessionData>(
+        cookies(),
+        sessionOptions
+    );
 
-    const products = await getProducts(`
-eyJhbGciOiJIUzI1NiJ9.TUxEODI1MjNWV0ZGUw.NvAa40shtB2LjY736chOJU6J9tm5JRyDd_XQHu8lxMY`).then(
+    const products = await getProducts(session.token).then(
         (data) => data.result
     );
 

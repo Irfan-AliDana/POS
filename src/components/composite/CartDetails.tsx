@@ -9,6 +9,7 @@ import SelectMod from "../base/Select";
 import { DiscountAndTax } from "@/src/containers/layout/LayoutContainer";
 import ButtonMod from "../base/Button";
 import { CloseCircleOutlined } from "@ant-design/icons";
+import { MutableRefObject } from "react";
 
 const useStyles = createStyles(({ token, css }) => ({
     container: css`
@@ -23,12 +24,16 @@ const useStyles = createStyles(({ token, css }) => ({
 
 type CartDetailsProps = {
     cart: CartItem;
-    handleDiscount: (value: string, type: string, productId: string) => void;
+    handleDiscount: (
+        value: string,
+        type: string,
+        productId: string,
+        itemDeleted?: boolean
+    ) => void;
     handleTax: (value: string, type: string, productId: string) => void;
     discountOptions: { label: string; value: number }[];
     taxOptions: { label: string; value: number }[];
     finalPrice: number;
-    type: DiscountAndTax;
     handleAddToCart: (productId: string, data: Item) => void;
     handleRemoveFromCart: (productId: string) => void;
     handleDeleteFromCart: (
@@ -45,7 +50,6 @@ export default function CartDetails({
     discountOptions,
     taxOptions,
     finalPrice,
-    type,
     handleAddToCart,
     handleRemoveFromCart,
     handleDeleteFromCart,
@@ -70,7 +74,9 @@ export default function CartDetails({
                         Price: ${cart.data.variations[0].price.amount / 100}
                     </p>
                     <p data-testid="quantity">Quantity: {cart.quantity}</p>
-                    <p data-testid="final-price">Final: ${finalPrice}</p>
+                    <p data-testid="final-price">
+                        Final: ${finalPrice ? finalPrice : ""}
+                    </p>
                 </Space>
             </Flex>
 
@@ -97,6 +103,24 @@ export default function CartDetails({
                         );
                     }}
                     options={discountOptions}
+                    mode="multiple"
+                    handleDeselect={(value: string) => {
+                        handleDiscount(
+                            value,
+                            "inline",
+                            cart.data.variations[0].variationId,
+                            true
+                        );
+                    }}
+                    handleClear={() => {
+                        handleDiscount(
+                            "undefined",
+                            "inline",
+                            cart.data.variations[0].variationId,
+                            true
+                        );
+                    }}
+                    onSelect
                 />
                 <SelectMod
                     showSearch

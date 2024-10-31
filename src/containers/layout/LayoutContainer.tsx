@@ -3,17 +3,19 @@ import Link from "next/link";
 import { Drawer, Flex, MenuProps, Space } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import { createStyles } from "antd-style";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import CartDetails from "@/src/components/composite/CartDetails";
 import { useCartStore } from "@/src/zustand/store/cart-store";
-import { useMutation } from "@tanstack/react-query";
 import { BASE_URL_API } from "@/src/utils/constants";
 import SelectMod from "@/src/components/base/Select";
 import { useSession } from "@/src/hooks/useSession";
 import Spinner from "@/src/components/base/Spinner";
 import { usePathname } from "next/navigation";
-import { customFetch, fetcher } from "@/src/utils/lib";
+import { fetcher } from "@/src/utils/lib";
 import useSWR from "swr";
+import useSWRMutation from "swr/mutation";
+import CartItemsList from "@/src/components/layouts/CartItemsList";
+// import HeavyComponent from "@/src/components/composite/HeavyComponent";
 
 const useStyles = createStyles(({ token, css }) => ({
     cartItem: css`
@@ -35,9 +37,6 @@ const useStyles = createStyles(({ token, css }) => ({
     `,
     iconSize: css`
         font-size: 30px !important;
-    `,
-    drawerCard: css`
-        padding-bottom: 10px;
     `,
 }));
 
@@ -104,17 +103,6 @@ const getItems = (itemsCount: any, showDrawer: () => void, styles: any) => {
     return item;
 };
 
-const typeOptions = [
-    {
-        label: "Global",
-        value: "global",
-    },
-    {
-        label: "Inline",
-        value: "inline",
-    },
-];
-
 const defaultOrder = {
     locationId: "LS39Z5XR173MZ",
     lineItems: [],
@@ -175,25 +163,32 @@ export default function LayoutContainer({
         })
     );
 
-    const { mutate, isPending } = useMutation({
-        mutationFn: (order) =>
-            customFetch(
-                `${BASE_URL_API}/api/calculate-order`,
-                {
-                    "Content-Type": "application/json",
-                    Authorization: session?.token,
-                },
-                "POST",
-                order
-            ),
+    const updateUserData = async (url: string, { arg }: { arg: any }) => {
+        const res = await fetcher(
+            `${BASE_URL_API}/api/calculate-order`,
+            session?.token,
+            {
+                "Content-Type": "application/json",
+            },
+            "POST",
+            arg
+        );
 
-        onSuccess(data, variables, context) {
-            setCalculatedAmount(data.result);
-        },
-        onError(error, variables, context) {
-            console.log(error);
-        },
-    });
+        return res;
+    };
+
+    const { trigger, isMutating } = useSWRMutation(
+        `${BASE_URL_API}/api/calculate-order`,
+        updateUserData,
+        {
+            onSuccess(data) {
+                setCalculatedAmount(data.result);
+            },
+            onError(error) {
+                console.log(error);
+            },
+        }
+    );
 
     const totalQuantity =
         cartKeys?.map((key) => {
@@ -217,106 +212,145 @@ export default function LayoutContainer({
     const handleDiscount = (
         discountId: string,
         type: string,
-        cartItemId?: string
+        cartItemId?: string,
+        itemDeleted?: boolean
     ) => {
+        const discountArray = discountId.split(",");
+        const lastDiscount = discountArray[discountArray.length - 1];
+
         if (type === "global") {
             setDiscount((prevData: any) => {
-                if (discountId === "undefined") {
-                    // Remove only global (ORDER scope) discounts, keep other discounts.
+                if (itemDeleted && lastDiscount === "undefined") {
                     return prevData.filter((d: any) => d.scope !== "ORDER");
                 }
+
+                if (itemDeleted && lastDiscount !== "undefined") {
+                    return prevData.filter(
+                        (d: any) =>
+                            !(
+                                d.catalogObjectId === lastDiscount &&
+                                d.scope === "ORDER"
+                            )
+                    );
+                }
+
+                const globalDiscountExists = prevData.find(
+                    (d: any) =>
+                        d.catalogObjectId === lastDiscount &&
+                        d.scope === "ORDER"
+                );
+
+                if (globalDiscountExists) {
+                    return prevData;
+                }
+
                 return [
-                    ...prevData.filter((d: any) => d.scope !== "ORDER"),
+                    ...prevData,
                     {
-                        uid: discountId,
-                        catalogObjectId: discountId,
+                        uid: lastDiscount,
+                        catalogObjectId: lastDiscount,
                         scope: "ORDER",
                     },
                 ];
             });
         } else {
             setDiscount((prevData: any) => {
-                if (discountId === "undefined") {
-                    // Find the existing discount for this item.
-                    const updatedDiscounts = prevData
-                        .map((d: any) => {
-                            if (!d.itemCatalogIds) return d; // Skip if no itemCatalogIds exist.
+                if (itemDeleted && lastDiscount !== "undefined") {
+                    // Handle deleting a discount based on the cartItemId
+                    const updatedDiscounts = (prevData || [])
+                        ?.map((d: any) => {
+                            if (!d.itemCatalogIds) return d;
 
-                            // Remove the `cartItemId` from the discount's `itemCatalogIds`.
+                            if (d.catalogObjectId === lastDiscount) {
+                                // If there's only one cart item ID, remove the discount
+                                if (d.itemCatalogIds.length === 1) {
+                                    return null; // Remove this discount
+                                } else {
+                                    // If there are multiple cart item IDs, filter out the specified cartItemId
+                                    const updatedItemCatalogIds =
+                                        d.itemCatalogIds.filter(
+                                            (id: string) => id !== cartItemId
+                                        );
+
+                                    return {
+                                        ...d,
+                                        itemCatalogIds: updatedItemCatalogIds,
+                                    };
+                                }
+                            }
+                            return d;
+                        })
+                        .filter(Boolean);
+
+                    return updatedDiscounts.length > 0 ? updatedDiscounts : [];
+                }
+
+                if (itemDeleted && lastDiscount === "undefined") {
+                    // Filter out all discounts associated with the specified cart item ID
+                    const updatedDiscounts = prevData
+                        .map((discount: any) => {
+                            if (!discount.itemCatalogIds) return discount;
+
                             const updatedItemCatalogIds =
-                                d.itemCatalogIds.filter(
+                                discount.itemCatalogIds.filter(
                                     (id: string) => id !== cartItemId
                                 );
 
-                            // If there are still items left, update the discount.
                             if (updatedItemCatalogIds.length > 0) {
                                 return {
-                                    ...d,
+                                    ...discount,
                                     itemCatalogIds: updatedItemCatalogIds,
                                 };
                             }
 
-                            // Return null if no items are left.
+                            // Return null if no items are left
                             return null;
                         })
-                        .filter(Boolean); // Remove null values.
+                        .filter(Boolean); // Remove null values
 
+                    return updatedDiscounts.length > 0 ? updatedDiscounts : [];
+                }
+
+                const existingDiscountIndex = prevData.findIndex(
+                    (d: any) =>
+                        d.catalogObjectId === lastDiscount &&
+                        d.scope === "LINE_ITEM"
+                );
+
+                if (existingDiscountIndex > -1) {
+                    // Discount already exists, so update it by adding `cartItemId` if not already present
+                    const updatedDiscounts = [...prevData];
+                    const existingDiscount =
+                        updatedDiscounts[existingDiscountIndex];
+
+                    if (!existingDiscount.itemCatalogIds.includes(cartItemId)) {
+                        existingDiscount.itemCatalogIds = [
+                            ...existingDiscount.itemCatalogIds,
+                            cartItemId,
+                        ];
+                    }
+
+                    updatedDiscounts[existingDiscountIndex] = existingDiscount;
                     return updatedDiscounts;
                 }
-                let found = false; // Track if the new discount was found and updated
 
-                const updatedDiscounts = prevData
-                    .map((discount: any) => {
-                        // Remove cartItemId from any existing discount's itemCatalogIds
-                        if (discount.itemCatalogIds?.includes(cartItemId)) {
-                            return {
-                                ...discount,
-                                itemCatalogIds: discount.itemCatalogIds.filter(
-                                    (id: string) => id !== cartItemId
-                                ),
-                            };
-                        }
-
-                        // If this is the new discount, add the cartItemId to it
-                        if (
-                            discount.catalogObjectId === discountId &&
-                            discount.scope === "LINE_ITEM"
-                        ) {
-                            found = true;
-                            return {
-                                ...discount,
-                                itemCatalogIds: [
-                                    ...(discount.itemCatalogIds || []),
-                                    cartItemId,
-                                ],
-                            };
-                        }
-
-                        // Return other discounts unchanged
-                        return discount;
-                    })
-                    .filter(
-                        (discount: any) =>
-                            discount.itemCatalogIds?.length > 0 ||
-                            discount.scope === "ORDER"
-                    );
-
-                // If the discount is not found, add it as a new one
-                if (!found) {
-                    updatedDiscounts.push({
-                        catalogObjectId: discountId,
-                        uid: discountId,
+                return [
+                    ...prevData,
+                    {
+                        catalogObjectId: lastDiscount,
+                        uid: lastDiscount,
                         itemCatalogIds: [cartItemId],
                         scope: "LINE_ITEM",
-                    });
-                }
-
-                return updatedDiscounts;
+                    },
+                ];
             });
         }
     };
 
     const handleTax = (taxId: string, type: string, cartItemId?: string) => {
+        const taxArray = taxId.split(",");
+        const lastTax = taxArray[taxArray.length - 1];
+
         if (type === "global") {
             setTax((prevData: any) => {
                 if (taxId === "undefined") {
@@ -359,53 +393,35 @@ export default function LayoutContainer({
                     return updatedTaxes;
                 }
 
-                let found = false;
+                const existingTaxIndex = prevData.findIndex(
+                    (t: any) =>
+                        t.catalogObjectId === lastTax && t.scope === "LINE_ITEM"
+                );
 
-                const updatedTaxes = prevData
-                    .map((tax: any) => {
-                        if (tax.itemCatalogIds?.includes(cartItemId)) {
-                            return {
-                                ...tax,
-                                itemCatalogIds: tax.itemCatalogIds.filter(
-                                    (id: string) => id !== cartItemId
-                                ),
-                            };
-                        }
+                if (existingTaxIndex > -1) {
+                    const updatedTaxes = [...prevData];
+                    const existingTax = updatedTaxes[existingTaxIndex];
 
-                        if (
-                            tax.catalogObjectId === taxId &&
-                            tax.scope === "LINE_ITEM"
-                        ) {
-                            found = true;
-                            return {
-                                ...tax,
-                                itemCatalogIds: [
-                                    ...(tax.itemCatalogIds || []),
-                                    cartItemId,
-                                ],
-                            };
-                        }
+                    if (!existingTax.itemCatalogIds.includes(cartItemId)) {
+                        existingTax.itemCatalogIds = [
+                            ...existingTax.itemCatalogIds,
+                            cartItemId,
+                        ];
+                    }
 
-                        // Return other taxs unchanged
-                        return tax;
-                    })
-                    .filter(
-                        (tax: any) =>
-                            tax.itemCatalogIds?.length > 0 ||
-                            tax.scope === "ORDER"
-                    );
-
-                // If the discount is not found, add it as a new one
-                if (!found) {
-                    updatedTaxes.push({
-                        catalogObjectId: taxId,
-                        uid: taxId,
-                        itemCatalogIds: [cartItemId],
-                        scope: "LINE_ITEM",
-                    });
+                    updatedTaxes[existingTaxIndex] = existingTax;
+                    return updatedTaxes;
                 }
 
-                return updatedTaxes;
+                return [
+                    ...prevData,
+                    {
+                        catalogObjectId: lastTax,
+                        uid: lastTax,
+                        itemCatalogIds: [cartItemId],
+                        scope: "LINE_ITEM",
+                    },
+                ];
             });
         }
     };
@@ -416,8 +432,8 @@ export default function LayoutContainer({
         cartItemId: string
     ) => {
         deleteFromCart(productId);
-        handleDiscount(discountId, "inline", cartItemId);
-        handleTax(discountId, "inline", cartItemId);
+        handleDiscount("undefined", "inline", cartItemId, true);
+        // handleTax(discountId, "inline", cartItemId);
     };
 
     const handleTypeChange = (value: DiscountAndTax) => {
@@ -435,6 +451,14 @@ export default function LayoutContainer({
                         handleDiscount(`${value}`, "global");
                     }}
                     options={transformedDiscount}
+                    handleDeselect={(value: string) => {
+                        handleDiscount(value, "global", undefined, true);
+                    }}
+                    mode="multiple"
+                    handleClear={() => {
+                        handleDiscount("undefined", "global", undefined, true);
+                    }}
+                    onSelect
                 />
             </Space>
             <Space>
@@ -446,11 +470,19 @@ export default function LayoutContainer({
                         handleTax(`${value}`, "global");
                     }}
                     options={transformedTax}
+                    handleDeselect={(value: string) => {
+                        handleDiscount(value, "global", undefined, true);
+                    }}
+                    mode="multiple"
+                    handleClear={() => {
+                        handleDiscount("undefined", "global", undefined, true);
+                    }}
+                    onSelect
                 />
             </Space>
             <Space>
                 <h4>Total</h4>
-                {isPending ? (
+                {isMutating ? (
                     <Spinner size={20} />
                 ) : (
                     <span>
@@ -466,7 +498,7 @@ export default function LayoutContainer({
     const totalOnlyFooter = (
         <Space>
             <h4>Total</h4>
-            {isPending ? (
+            {isMutating ? (
                 <Spinner size={20} />
             ) : (
                 <span>
@@ -481,18 +513,6 @@ export default function LayoutContainer({
     const header = (
         <Flex justify="space-between" align="center">
             <p>{`My Cart (${itemsCount})`}</p>
-            <div style={{ width: "50%" }}>
-                <SelectMod
-                    showSearch={false}
-                    placeholder="Discount Type"
-                    handleDropdown={(value) =>
-                        handleTypeChange(value as DiscountAndTax)
-                    }
-                    options={typeOptions}
-                    defaultValue="global"
-                    allowClear={false}
-                />
-            </div>
         </Flex>
     );
 
@@ -523,9 +543,9 @@ export default function LayoutContainer({
                     ...order,
                 },
             };
-            mutate(transformedOrder as any);
+            trigger(transformedOrder as any);
         }
-    }, [order, mutate]);
+    }, [order, trigger]);
 
     useEffect(() => {
         setPerItemPrice(0);
@@ -535,6 +555,8 @@ export default function LayoutContainer({
     }, [discountType]);
 
     useEffect(() => {
+        console.log("Discount", discount);
+
         const lineItems = cartKeys.map((key) => {
             const item = cart[key];
 
@@ -542,12 +564,14 @@ export default function LayoutContainer({
 
             // Inline discounts
             const appliedDiscounts = discount
-                .filter(
+                ?.filter(
                     (d: any) =>
                         d.itemCatalogIds &&
                         d.itemCatalogIds.includes(variationId)
                 )
                 .map((d: any) => ({ discountUid: d.uid }));
+
+            console.log("Applied Discounts", appliedDiscounts);
 
             const appliedTaxes = tax
                 .filter(
@@ -580,6 +604,10 @@ export default function LayoutContainer({
         }
     }, [cart]);
 
+    const HeavyComponent = lazy(
+        () => import("../../components/composite/HeavyComponent")
+    );
+
     return (
         <AppLayout
             items={getItems(itemsCount, handleShowDrawer, styles)}
@@ -589,50 +617,28 @@ export default function LayoutContainer({
                 title={header}
                 onClose={handleCloseDrawer}
                 open={open}
-                width={500}
+                width={600}
                 footer={discountType === "global" ? footer : totalOnlyFooter}
+                mask={false}
             >
-                {cartKeys.length > 0 ? (
-                    cartKeys.map((key) => {
-                        const listItem = calculatedAmount?.lineItems?.filter(
-                            (item: any) => {
-                                return (
-                                    cart[key].data.variations[0].variationId ===
-                                    item.catalogObjectId
-                                );
-                            }
-                        );
+                {/* <div>Hello World!</div> */}
 
-                        let finalPrice = perItemPrice;
-                        if (listItem) {
-                            finalPrice = listItem[0]?.totalMoney?.amount / 100;
-                        }
-
-                        return (
-                            <div className={styles.drawerCard} key={key}>
-                                <CartDetails
-                                    cart={cart[key]}
-                                    handleDiscount={handleDiscount}
-                                    handleTax={handleTax}
-                                    discountOptions={transformedDiscount}
-                                    taxOptions={transformedTax}
-                                    finalPrice={
-                                        finalPrice !== 0
-                                            ? finalPrice
-                                            : cart[key].data.variations[0].price
-                                                  .amount / 100
-                                    }
-                                    type={discountType}
-                                    handleAddToCart={handleAddToCart}
-                                    handleRemoveFromCart={handleRemoveFromCart}
-                                    handleDeleteFromCart={handleDeleteFromCart}
-                                />
-                            </div>
-                        );
-                    })
-                ) : (
-                    <h3>Your cart is empty!</h3>
-                )}
+                <Suspense fallback={<Spinner />}>
+                    <CartItemsList
+                        cartKeys={cartKeys}
+                        cart={cart}
+                        handleDiscount={handleDiscount}
+                        handleTax={handleTax}
+                        discountOptions={transformedDiscount}
+                        taxOptions={transformedTax}
+                        handleAddToCart={handleAddToCart}
+                        handleRemoveFromCart={handleRemoveFromCart}
+                        handleDeleteFromCart={handleDeleteFromCart}
+                        calculatedAmount={calculatedAmount}
+                        perItemPrice={perItemPrice}
+                    />
+                    {/* <HeavyComponent /> */}
+                </Suspense>
             </Drawer>
             {children}
         </AppLayout>

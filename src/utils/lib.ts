@@ -26,38 +26,31 @@ type FetchOptions = {
     body?: any;
 };
 
-export const customFetch = async (
+export const fetcher = async (
     url: string,
+    token?: string,
     headers?: Record<string, string>,
     method: FetchOptions["method"] = "GET",
     payload?: any
 ) => {
-    try {
-        const options: FetchOptions = {
-            method,
-            headers,
+    const options: FetchOptions = {
+        method,
+    };
+
+    if (token) {
+        options.headers = {
+            Authorization: token as string,
+            ...headers,
         };
-
-        if (payload && method !== "GET") {
-            options.body = JSON.stringify(payload);
-        }
-
-        const response = await fetch(url, options);
-
-        if (!response.ok) {
-            throw new Error(`${response.status} ${response.statusText}`);
-        }
-
-        return response.json();
-    } catch (error) {
-        throw new Error("Something went wrong");
     }
-};
 
-export const fetcher = (url: string, token?: string) =>
-    fetch(url, { headers: token ? { Authorization: token } : undefined }).then(
-        (res) => {
-            if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-            return res.json();
-        }
-    );
+    if (payload && method !== "GET") {
+        options.body = JSON.stringify(payload);
+    }
+
+    const res = await fetch(url, options);
+
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+
+    return res.json();
+};

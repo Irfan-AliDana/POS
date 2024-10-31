@@ -8,11 +8,13 @@ import {
 import Product from "../composite/Product";
 import { Flex } from "antd";
 import SearchBar, { SearchBarProps } from "../composite/SearchBar";
+import { useRef } from "react";
 
 type ProductProps = SearchBarProps & {
     data: any;
     handleAddToCart: (productId: string, data: Item) => void;
     cart: Cart;
+    // validating: boolean;
 };
 
 export default function ProductList({
@@ -24,7 +26,8 @@ export default function ProductList({
     loading,
     handleDropdown,
     options,
-}: ProductProps) {
+}: // validating,
+ProductProps) {
     return (
         <>
             <SearchBar
